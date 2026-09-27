@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="vi" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Màn Hình Pha Chế (Barista KDS) - CafeManager Pro</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        if (window.tailwind) {
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        fontFamily: {
+                            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                            mono: ['"JetBrains Mono"', 'monospace']
+                        },
+                        colors: {
+                            amber: {
+                                500: '#f59e0b',
+                                600: '#d97706'
+                            }
+                        }
+                    }
+                }
+            };
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+        ::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.3); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(245, 158, 11, 0.6); }
+        @keyframes pulse-border {
+            0%, 100% { border-color: rgba(239, 68, 68, 0.8); box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
+            50% { border-color: rgba(239, 68, 68, 0.3); box-shadow: none; }
+        }
+        .urgent-ticket {
+            animation: pulse-border 1.5s infinite;
+        }
+    </style>
+</head>
+<body class="h-full font-sans antialiased bg-slate-950 text-slate-100 flex flex-col overflow-hidden select-none">
+
+    <!-- ============================================================== -->
+    <!-- TOP HEADER: KDS Status Bar & Controls                          -->
+    <!-- ============================================================== -->
+    <header class="h-16 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between shrink-0 shadow-lg z-20">
+        <!-- Brand & Barista Name -->
+        <div class="flex items-center gap-3">
+            <a href="index.html" class="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white border border-slate-700 transition-colors" title="Trở về Trang Chủ">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            </a>
+            <div class="flex items-center gap-2.5">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-xl">
+                    ☕
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-sm font-extrabold text-white uppercase tracking-tight">Màn Hình Pha Chế (Barista KDS)</h1>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">ONLINE</span>
+                    </div>
+                    <div class="text-xs text-slate-400 flex items-center gap-2">
+                        <span>Pha chế chính: <strong class="text-white" id="barista-name">Nguyễn Văn Barista</strong></span>
+                        <span>•</span>
+                        <span id="pending-counter" class="text-amber-400 font-bold">0 đơn chờ</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls: Sound Toggle & Quick Actions -->
+        <div class="flex items-center gap-3">
+            <!-- Audio chime toggle -->
+            <button onclick="toggleSound()" id="sound-btn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 border border-slate-700 text-xs font-bold transition-all">
+                <span id="sound-icon">🔔</span>
+                <span id="sound-label">Chuông Báo (Bật)</span>
+            </button>
+
+            <!-- Test Order Generator -->
+            <button onclick="createMockTicket()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-xs font-bold transition-all">
+                ➕ Thử Đơn Mẫu
+            </button>
+
+            <!-- Clock -->
+            <div class="px-3.5 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700 font-mono text-sm font-bold text-amber-400 flex items-center gap-2">
+                <span>🕒</span>
+                <span id="kds-clock">00:00:00</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ============================================================== -->
+    <!-- MAIN KDS BOARD: 3-Column Kanban Workflow                       -->
+    <!-- ============================================================== -->
+    <main class="flex-1 overflow-x-auto p-4 flex gap-4 bg-slate-950">
+        
+        <!-- ========================================================== -->
+        <!-- CỘT 1: CHỜ PHA CHẾ (PENDING ORDERS)                        -->
+        <!-- ========================================================== -->
+        <section class="flex-1 min-w-[340px] max-w-[420px] bg-slate-900/70 border border-slate-800 rounded-3xl flex flex-col overflow-hidden shadow-xl">
+            <!-- Column Header -->
+            <div class="p-3.5 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-amber-400 animate-pulse"></span>
+                    <h2 class="text-xs font-black uppercase tracking-wider text-amber-400">1. Chờ Pha Chế</h2>
+                </div>
+                <span id="count-pending" class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono font-black text-xs">0</span>
+            </div>
+
+            <!-- Tickets List -->
+            <div class="flex-1 overflow-y-auto p-3 space-y-3" id="list-pending">
+                <!-- Rendered by JS -->
+            </div>
+        </section>
+
+        <!-- ========================================================== -->
+        <!-- CỘT 2: ĐANG PHA CHẾ (BREWING IN PROGRESS)                  -->
+        <!-- ========================================================== -->
+        <section class="flex-1 min-w-[340px] max-w-[420px] bg-slate-900/70 border border-slate-800 rounded-3xl flex flex-col overflow-hidden shadow-xl">
+            <!-- Column Header -->
+            <div class="p-3.5 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-cyan-400 animate-pulse"></span>
+                    <h2 class="text-xs font-black uppercase tracking-wider text-cyan-400">2. Đang Pha Chế</h2>
+                </div>
+                <span id="count-brewing" class="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-mono font-black text-xs">0</span>
+            </div>
+
+            <!-- Tickets List -->
+            <div class="flex-1 overflow-y-auto p-3 space-y-3" id="list-brewing">
+                <!-- Rendered by JS -->
+            </div>
+        </section>
+
+        <!-- ========================================================== -->
+        <!-- CỘT 3: ĐÃ XONG / GỌI PHỤC VỤ (READY TO SERVE)             -->
+        <!-- ========================================================== -->
+        <section class="flex-1 min-w-[340px] max-w-[420px] bg-slate-900/70 border border-slate-800 rounded-3xl flex flex-col overflow-hidden shadow-xl">
+            <!-- Column Header -->
+            <div class="p-3.5 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-emerald-400"></span>
+                    <h2 class="text-xs font-black uppercase tracking-wider text-emerald-400">3. Đã Xong - Chờ Bưng</h2>
+                </div>
+                <span id="count-ready" class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono font-black text-xs">0</span>
+            </div>
+
+            <!-- Tickets List -->
+            <div class="flex-1 overflow-y-auto p-3 space-y-3" id="list-ready">
+                <!-- Rendered by JS -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden transition-all duration-300">
+        <div class="p-4 rounded-2xl shadow-2xl flex items-center gap-3 text-xs font-bold border border-emerald-500/50 bg-emerald-950/90 text-emerald-200 backdrop-blur-md">
+            <span class="text-base">🔔</span>
+            <span id="toast-msg">Có order mới vừa gửi từ Bàn 03!</span>
+        </div>
+    </div>
+
+    <!-- AUDIO NOTIFICATION (Web Audio API Bell) -->
+    <script>
+        let soundEnabled = true;
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playDingChime() {
+            if (!soundEnabled) return;
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const now = audioCtx.currentTime;
+                
+                // Tone 1
+                const osc1 = audioCtx.createOscillator();
+                const gain1 = audioCtx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(587.33, now); // D5
+                gain1.gain.setValueAtTime(0.15, now);
+                gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                osc1.connect(gain1);
+                gain1.connect(audioCtx.destination);
+                osc1.start(now);
+                osc1.stop(now + 0.4);
+
+                // Tone 2 (Higher)
+                const osc2 = audioCtx.createOscillator();
+                const gain2 = audioCtx.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(880, now + 0.12); // A5
+                gain2.gain.setValueAtTime(0.2, now + 0.12);
+                gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+                osc2.connect(gain2);
+                gain2.connect(audioCtx.destination);
+                osc2.start(now + 0.12);
+                osc2.stop(now + 0.7);
+            } catch (e) {}
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('sound-icon');
+            const label = document.getElementById('sound-label');
+            if (soundEnabled) {
+                icon.textContent = '🔔';
+                label.textContent = 'Chuông Báo (Bật)';
+                playDingChime();
+            } else {
+                icon.textContent = '🔕';
+                label.textContent = 'Chuông Báo (Tắt)';
+            }
+        }
+    </script>
+
+    <!-- KDS JAVASCRIPT LOGIC -->
+    <script>
+        const syncChannel = new BroadcastChannel('pos_system_sync');
+        let orders = [];
+
+        // Realtime Clock
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('kds-clock').textContent = now.toLocaleTimeString('vi-VN');
+            updateElapsedTimers();
+        }, 1000);
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadBaristaName();
+            loadOrders();
+            renderBoard();
+        });
+
+        // Listen to cross-system broadcasts (from Waiter mobile or Cashier POS)
+        syncChannel.onmessage = (e) => {
+            const data = e.data;
+            if (data.type === 'NEW_ORDER_FROM_WAITER' || data.type === 'ORDER_SENT_TO_KITCHEN') {
+                playDingChime();
+                showKdsToast(`🔔 ĐƠN MỚI TỪ ${data.tableName || 'BÀN'}!`);
+                loadOrders();
+                renderBoard();
+            }
+        };
+
+        function loadBaristaName() {
+            const staffList = JSON.parse(localStorage.getItem('admin_store_staff') || '[]');
+            const barista = staffList.find(s => s.role === 'Barista' && s.active !== false);
+            if (barista) {
+                document.getElementById('barista-name').textContent = barista.name;
+            }
+        }
+
+        function loadOrders() {
+            orders = JSON.parse(localStorage.getItem('barista_orders') || 'null');
+            if (!orders || orders.length === 0) {
+                // Initial Sample orders if empty
+                orders = [
+                    {
+                        id: 'TKT-101',
+                        tableId: '1',
+                        tableName: 'Bàn 01 (Tầng 1)',
+                        waiterName: 'Hoàng Nhân (Order)',
+                        time: '19:40',
+                        status: 'pending',
+                        timestamp: Date.now() - 360000, // 6 mins ago
+                        items: [
+                            { name: 'Cà Phê Muối Kem Béo', size: 'M', quantity: 2, note: 'Size M • Đường 70% • Đá 100% • +Kem Cheese' },
+                            { name: 'Trà Đào Cam Sả', size: 'L', quantity: 1, note: 'Size L • Đường 50% • Đá 50% • +Thạch đào' }
+                        ]
+                    },
+                    {
+                        id: 'TKT-102',
+                        tableId: '3',
+                        tableName: 'Bàn 03 (Sân Vườn)',
+                        waiterName: 'Hoàng Nhân (Order)',
+                        time: '19:44',
+                        status: 'brewing',
+                        timestamp: Date.now() - 120000, // 2 mins ago
+                        items: [
+                            { name: 'Matcha Freeze Đá Xay', size: 'M', quantity: 1, note: 'Size M • Đường 100% • Nhiều kem whipping' }
+                        ]
+                    }
+                ];
+                saveOrders();
+            }
+        }
+
+        function saveOrders() {
+            localStorage.setItem('barista_orders', JSON.stringify(orders));
+        }
+
+        function getElapsedText(timestamp) {
+            const diffSeconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
+            const mins = Math.floor(diffSeconds / 60);
+            const secs = diffSeconds % 60;
+            return `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        function updateElapsedTimers() {
+            orders.forEach(o => {
+                const el = document.getElementById(`timer-${o.id}`);
+                if (el) {
+                    el.textContent = getElapsedText(o.timestamp);
+                    const diffMins = Math.floor((Date.now() - o.timestamp) / 60000);
+                    if (diffMins >= 10 && o.status !== 'ready') {
+                        el.parentElement.className = 'flex items-center gap-1 text-[11px] font-mono font-black text-rose-400 bg-rose-950/60 px-2 py-0.5 rounded-md border border-rose-800 animate-pulse';
+                    } else if (diffMins >= 5 && o.status !== 'ready') {
+                        el.parentElement.className = 'flex items-center gap-1 text-[11px] font-mono font-black text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-800';
+                    }
+                }
+            });
+        }
+
+        // ==========================================
+        // RENDER KDS TICKETS
+        // ==========================================
+        function renderBoard() {
+            const listPending = document.getElementById('list-pending');
+            const listBrewing = document.getElementById('list-brewing');
+            const listReady = document.getElementById('list-ready');
+
+            const pendingOrders = orders.filter(o => o.status === 'pending');
+            const brewingOrders = orders.filter(o => o.status === 'brewing');
+            const readyOrders = orders.filter(o => o.status === 'ready');
+
+            document.getElementById('count-pending').textContent = pendingOrders.length;
+            document.getElementById('count-brewing').textContent = brewingOrders.length;
+            document.getElementById('count-ready').textContent = readyOrders.length;
+            document.getElementById('pending-counter').textContent = `${pendingOrders.length} đơn chờ pha`;
+
+            listPending.innerHTML = pendingOrders.length ? pendingOrders.map(renderTicketCard).join('') : renderEmptyState('Không có đơn nào đang chờ');
+            listBrewing.innerHTML = brewingOrders.length ? brewingOrders.map(renderTicketCard).join('') : renderEmptyState('Chưa có đơn nào đang pha');
+            listReady.innerHTML = readyOrders.length ? readyOrders.map(renderTicketCard).join('') : renderEmptyState('Chưa có món hoàn thành');
+        }
+
+        function renderTicketCard(order) {
+            const diffMins = Math.floor((Date.now() - order.timestamp) / 60000);
+            const isUrgent = diffMins >= 10 && order.status !== 'ready';
+            const isWarning = diffMins >= 5 && order.status !== 'ready';
+
+            const statusActionBtn = order.status === 'pending'
+                ? `<button onclick="updateTicketStatus('${order.id}', 'brewing')" class="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase tracking-wide flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all">
+                        <span>▶️</span> BẮT ĐẦU PHA CHẾ
+                   </button>`
+                : order.status === 'brewing'
+                ? `<button onclick="updateTicketStatus('${order.id}', 'ready')" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wide flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all">
+                        <span>✅</span> BÁO ĐÃ PHA XONG
+                   </button>`
+                : `<button onclick="archiveTicket('${order.id}')" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 font-black text-xs uppercase tracking-wide flex items-center justify-center gap-1.5 active:scale-95 transition-all">
+                        <span>✓</span> ĐÃ BƯNG RA BÀN
+                   </button>`;
+
+            return `
+                <div class="bg-slate-850 rounded-2xl border ${isUrgent ? 'border-rose-500 urgent-ticket' : isWarning ? 'border-amber-500/60' : 'border-slate-700/80'} p-3.5 space-y-3 shadow-lg transition-all">
+                    <!-- Ticket Header -->
+                    <div class="flex items-start justify-between border-b border-slate-700/80 pb-2.5">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-sm font-black text-white leading-tight">${order.tableName}</h3>
+                                <span class="font-mono text-[10px] text-slate-400">${order.id}</span>
+                            </div>
+                            <div class="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1">
+                                <span>Order bởi: <strong class="text-slate-300">${order.waiterName || 'Nhân viên'}</strong></span>
+                                <span>• ${order.time}</span>
+                            </div>
+                        </div>
+
+                        <!-- Timer badge -->
+                        <div class="flex items-center gap-1 text-[11px] font-mono font-black ${isUrgent ? 'text-rose-400 bg-rose-950/60 border border-rose-800' : isWarning ? 'text-amber-400 bg-amber-950/60 border border-amber-800' : 'text-slate-300 bg-slate-800'} px-2 py-0.5 rounded-md">
+                            <span>⏱️</span>
+                            <span id="timer-${order.id}">${getElapsedText(order.timestamp)}</span>
+                        </div>
+                    </div>
+
+                    <!-- Items Checklist -->
+                    <div class="space-y-2">
+                        ${order.items.map((item, idx) => `
+                            <div class="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex items-start gap-2.5">
+                                <span class="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 font-mono font-black text-xs flex items-center justify-center shrink-0">
+                                    ${item.quantity}x
+                                </span>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-xs font-black text-white truncate">${item.name}</div>
+                                    <div class="text-[10px] font-bold text-amber-400 mt-0.5 leading-snug">${item.note || 'Chuẩn'}</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <!-- Action Button -->
+                    <div class="pt-1">
+                        ${statusActionBtn}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderEmptyState(text) {
+            return `
+                <div class="h-48 flex flex-col items-center justify-center text-slate-500 text-xs">
+                    <span class="text-3xl mb-1.5 opacity-40">☕</span>
+                    <p>${text}</p>
+                </div>
+            `;
+        }
+
+        function updateTicketStatus(ticketId, newStatus) {
+            playDingChime();
+            const order = orders.find(o => o.id === ticketId);
+            if (!order) return;
+
+            order.status = newStatus;
+            saveOrders();
+            renderBoard();
+
+            if (newStatus === 'ready') {
+                showKdsToast(`✓ Đã pha xong đơn của ${order.tableName}! Báo phục vụ bưng ra.`);
+                // Broadcast to Waiter & POS that order is ready
+                syncChannel.postMessage({
+                    type: 'ORDER_READY',
+                    ticketId: ticketId,
+                    tableName: order.tableName
+                });
+            }
+        }
+
+        function archiveTicket(ticketId) {
+            orders = orders.filter(o => o.id !== ticketId);
+            saveOrders();
+            renderBoard();
+            showKdsToast('✓ Đã hoàn tất và lưu trữ đơn!');
+        }
+
+        function createMockTicket() {
+            playDingChime();
+            const mock = {
+                id: 'TKT-' + Math.floor(100 + Math.random() * 900),
+                tableId: '2',
+                tableName: 'Bàn 02 (Tầng 1)',
+                waiterName: 'Hoàng Nhân (Order)',
+                time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+                status: 'pending',
+                timestamp: Date.now(),
+                items: [
+                    { name: 'Bạc Xỉu 3 Tầng', size: 'M', quantity: 1, note: 'Size M • Đường 50% • Đá 100%' },
+                    { name: 'Trà Oolong Kem Phô Mai', size: 'L', quantity: 2, note: 'Size L • Đường 70% • Nhiều Cheese' }
+                ]
+            };
+            orders.unshift(mock);
+            saveOrders();
+            renderBoard();
+            showKdsToast('Đã thêm 1 đơn thử nghiệm vào danh sách chờ!');
+        }
+
+        function showKdsToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').textContent = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

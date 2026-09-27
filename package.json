@@ -1,0 +1,28 @@
+{
+  "name": "cafemanager-pos",
+  "version": "2.5.0",
+  "description": "Hệ thống Quản lý Bán hàng & Vận hành Quán Cà phê B2B SaaS (Frontend Vercel + Backend Neon PostgreSQL)",
+  "main": "api/index.js",
+  "scripts": {
+    "start": "node api/index.js",
+    "dev": "node --watch api/index.js",
+    "test:db": "node -e \"require('./api/db.js').testConnection()\""
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "pg": "^8.12.0",
+    "cors": "^2.8.5",
+    "jsonwebtoken": "^9.0.2",
+    "dotenv": "^16.4.5"
+  },
+  "keywords": [
+    "pos",
+    "f&b",
+    "cafe-management",
+    "vercel",
+    "neon-postgres",
+    "b2b-saas"
+  ],
+  "author": "CafeManager Dev Team",
+  "license": "MIT"
+}

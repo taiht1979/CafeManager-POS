@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="vi" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Trị Chi Nhánh (Store Admin) - CafeManager</title>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        if (window.tailwind) {
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        fontFamily: {
+                            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+                            mono: ['"JetBrains Mono"', 'monospace']
+                        },
+                        colors: {
+                            amber: {
+                                500: '#f59e0b',
+                                600: '#d97706',
+                                700: '#b45309',
+                            },
+                            indigo: {
+                                500: '#6366f1',
+                                600: '#4f46e5',
+                            }
+                        }
+                    }
+                }
+            };
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+        ::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.3); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(245, 158, 11, 0.6); }
+        .tab-view { display: none; }
+        .tab-view.active { display: block; }
+    </style>
+</head>
+<body class="h-full font-sans antialiased bg-slate-950 text-slate-100 flex flex-col md:flex-row overflow-hidden">
+
+    <!-- ========================================================================= -->
+    <!-- SIDEBAR QUẢN TRỊ CHUYÊN BIỆT (MANAGEMENT ONLY)                             -->
+    <!-- ========================================================================= -->
+    <aside class="w-full md:w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0">
+        <!-- Store Brand Head -->
+        <div class="h-16 px-5 border-b border-slate-800 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-lg">🏪</span>
+                <div>
+                    <h1 class="text-xs font-black text-white leading-tight" id="sidebar-store-title">Aroma Coffee</h1>
+                    <span class="text-[9px] text-amber-400 font-bold uppercase tracking-wider font-mono">PORTAL CHỦ QUÁN</span>
+                </div>
+            </div>
+            <a href="index.html" title="Trở về Cổng Trung Tâm" class="text-slate-500 hover:text-white text-xs">✕</a>
+        </div>
+
+        <!-- Role Badge -->
+        <div class="p-3 mx-3 my-2.5 rounded-xl bg-gradient-to-r from-amber-500/10 to-transparent border border-amber-500/30 flex items-center justify-between">
+            <div>
+                <div class="text-[10px] text-slate-400">Tài Khoản Đăng Nhập:</div>
+                <div class="text-xs font-black text-white flex items-center gap-1.5">
+                    <span>👑 Lê Hữu Nghĩa</span>
+                </div>
+            </div>
+            <span class="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full font-black">Chủ Quán</span>
+        </div>
+
+        <!-- Sidebar Navigation (Dedicated Management Tabs) -->
+        <nav class="flex-1 px-3 space-y-1 overflow-y-auto text-xs font-bold" id="store-nav-menu">
+            <button onclick="switchStoreTab('tables', this)" class="nav-item active w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 transition-all font-black">
+                <span>🪑</span>
+                <span>Quản Lý Bàn</span>
+            </button>
+            <button onclick="switchStoreTab('menu', this)" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all">
+                <span>☕</span>
+                <span>Thực Đơn Món</span>
+            </button>
+            <button onclick="switchStoreTab('staff', this)" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all">
+                <span>👥</span>
+                <span>Nhân Viên & Phân Quyền</span>
+            </button>
+            <button onclick="switchStoreTab('invoices', this)" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all">
+                <span>🧾</span>
+                <span>Quản Lý Hóa Đơn</span>
+            </button>
+            <button onclick="switchStoreTab('settings', this)" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all">
+                <span>⚙️</span>
+                <span>Cài Đặt & VietQR</span>
+            </button>
+            <button onclick="switchStoreTab('subscription', this)" class="nav-item w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-amber-400 hover:bg-amber-500/10 border border-amber-500/30 transition-all">
+                <div class="flex items-center gap-2.5">
+                    <span>💳</span>
+                    <span>Gói Dịch Vụ SaaS</span>
+                </div>
+                <span class="text-[9px] px-1.5 py-0.2 bg-amber-500 text-slate-950 rounded font-black">Pro</span>
+            </button>
+            <button onclick="switchStoreTab('reports', this)" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all">
+                <span>📈</span>
+                <span>Báo Cáo Doanh Thu</span>
+            </button>
+        </nav>
+
+        <!-- Quick Switcher to Other Roles -->
+        <div class="p-3 border-t border-slate-800 space-y-1.5 text-[11px] font-bold">
+            <div class="text-[10px] text-slate-500 uppercase px-1">Chuyển màn hình thao tác:</div>
+            <a href="pos.html" class="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700/80 flex items-center gap-2 transition-all">
+                <span>💻</span>
+                <span>Màn Hình Thu Ngân (POS)</span>
+            </a>
+            <a href="waiter-order.html" class="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700/80 flex items-center gap-2 transition-all">
+                <span>📱</span>
+                <span>Màn Hình Order Tại Bàn</span>
+            </a>
+            <a href="barista.html" class="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-700/80 flex items-center gap-2 transition-all">
+                <span>🍹</span>
+                <span>Màn Hình Pha Chế (KDS)</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- ========================================================================= -->
+    <!-- NỘI DUNG CHÍNH (MAIN AREA)                                                -->
+    <!-- ========================================================================= -->
+    <main class="flex-1 overflow-y-auto p-6 lg:p-8 bg-slate-950">
+        <div class="max-w-6xl mx-auto space-y-6">
+
+            <!-- ============================================================= -->
+            <!-- PHÂN HỆ 1: SƠ ĐỒ BÀN (THUẦN QUẢN LÝ: THÊM, SỬA, XÓA)         -->
+            <!-- ============================================================= -->
+            <section id="view-tables" class="tab-view active space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-5 rounded-2xl bg-slate-900 border border-slate-800">
+                    <div>
+                        <h2 class="text-base font-extrabold text-white">Quản Lý Danh Sách & Sơ Đồ Bàn</h2>
+                        <p class="text-xs text-slate-400">Thiết lập cấu hình phòng bàn, số chỗ ngồi và khu vực chi nhánh (Hạn mức: <strong class="text-amber-400 font-mono" id="tables-usage-text">9 / 30 bàn</strong>)</p>
+                    </div>
+                    <button onclick="openAddTableModal()" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md shadow-amber-500/20 flex items-center gap-1.5">
+                        <span>+ THÊM BÀN MỚI</span>
+                    </button>
+                </div>
+
+                <!-- Tables List Table View (Pure Management) -->
+                <div class="rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden shadow-xl">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-950/70 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+                            <tr>
+                                <th class="py-3.5 px-5">Tên Bàn</th>
+                                <th class="py-3.5 px-4">Khu Vực</th>
+                                <th class="py-3.5 px-4">Số Chỗ Ngồi</th>
+                                <th class="py-3.5 px-4">Trạng Thái Quản Lý</th>
+                                <th class="py-3.5 px-5 text-right">Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/80" id="store-tables-body">
+                            <!-- Rendered dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ============================================================= -->
+            <!-- PHÂN HỆ 2: THỰC ĐƠN MÓN (THÊM, SỬA MÓN, ĐỔI HÌNH ẢNH, XÓA)    -->
+            <!-- ============================================================= -->
+            <section id="view-menu" class="tab-view space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-5 rounded-2xl bg-slate-900 border border-slate-800">
+                    <div>
+                        <h2 class="text-base font-extrabold text-white">Quản Lý Thực Đơn & Hình Ảnh Món</h2>
+                        <p class="text-xs text-slate-400">Thêm mới, sửa giá, cập nhật hình ảnh món to rõ và quản lý danh mục</p>
+                    </div>
+                    <button onclick="openAddMenuModal()" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md flex items-center gap-1.5">
+                        <span>+ THÊM MÓN MỚI</span>
+                    </button>
+                </div>
+
+                <!-- Menu Table -->
+                <div class="rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden shadow-xl">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-950/70 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+                            <tr>
+                                <th class="py-3.5 px-5">Hình Ảnh & Tên Món</th>
+                                <th class="py-3.5 px-4">Danh Mục</th>
+                                <th class="py-3.5 px-4">Mã SKU</th>
+                                <th class="py-3.5 px-4">Đơn Giá Bán</th>
+                                <th class="py-3.5 px-4">Trạng Thái</th>
+                                <th class="py-3.5 px-5 text-right">Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/80" id="store-menu-body">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ============================================================= -->
+            <!-- PHÂN HỆ 3: NHÂN VIÊN QUÁN (THÊM, SỬA, XÓA, PHÂN QUYỀN VAI TRÒ)-->
+            <!-- ============================================================= -->
+            <section id="view-staff" class="tab-view space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-5 rounded-2xl bg-slate-900 border border-slate-800">
+                    <div>
+                        <h2 class="text-base font-extrabold text-white">Quản Lý Nhân Sự & Phân Quyền Vai Trò</h2>
+                        <p class="text-xs text-slate-400">Phân quyền nghiêm ngặt: Thu ngân chỉ dùng POS, Pha chế chỉ dùng KDS, Order chỉ gọi món tại bàn</p>
+                    </div>
+                    <button onclick="openAddStaffModal()" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md">
+                        + THÊM NHÂN VIÊN
+                    </button>
+                </div>
+
+                <!-- Staff Table -->
+                <div class="rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden shadow-xl">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-950/70 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+                            <tr>
+                                <th class="py-3.5 px-5">Họ Và Tên</th>
+                                <th class="py-3.5 px-4">Phân Quyền Vai Trò</th>
+                                <th class="py-3.5 px-4">Số Điện Thoại</th>
+                                <th class="py-3.5 px-4">Mã PIN Xác Thực</th>
+                                <th class="py-3.5 px-4">Trạng Thái</th>
+                                <th class="py-3.5 px-5 text-right">Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/80" id="store-staff-body">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ============================================================= -->
+            <!-- PHÂN HỆ 4: QUẢN LÝ HÓA ĐƠN (CHỈ DÀNH CHO QUẢN LÝ / CHỦ QUÁN)  -->
+            <!-- ============================================================= -->
+            <section id="view-invoices" class="tab-view space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-5 rounded-2xl bg-slate-900 border border-slate-800">
+                    <div>
+                        <h2 class="text-base font-extrabold text-white">Quản Trị Hóa Đơn & Kiểm Soát Huỷ / Sửa Đơn</h2>
+                        <p class="text-xs text-slate-400">🛡️ <strong>Chỉ Quản lý / Chủ quán mới có quyền Sửa hoặc Hủy hóa đơn</strong>. Nhân viên thu ngân thường bị chặn chức năng này.</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="refreshInvoicesList()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 border border-slate-700">
+                            🔄 Làm mới
+                        </button>
+                    </div>
+                </div>
+
+                <div class="rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden shadow-xl">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-950/70 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+                            <tr>
+                                <th class="py-3.5 px-5">Mã Hóa Đơn</th>
+                                <th class="py-3.5 px-4">Thời Gian</th>
+                                <th class="py-3.5 px-4">Bàn Phục Vụ</th>
+                                <th class="py-3.5 px-4">Tổng Tiền</th>
+                                <th class="py-3.5 px-4">Hình Thức</th>
+                                <th class="py-3.5 px-4">Trạng Thái</th>
+                                <th class="py-3.5 px-5 text-right">Quyền Quản Lý</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/80" id="store-invoices-body">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ============================================================= -->
+            <!-- PHÂN HỆ 5: CÀI ĐẶT THÔNG TIN QUÁN & VIETQR CHUẨN              -->
+            <!-- ============================================================= -->
+            <section id="view-settings" class="tab-view space-y-6">
+                <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+                    <h2 class="text-base font-extrabold text-white">Cấu Hình Thông Tin Quán & Tài Khoản VietQR</h2>
+                    <p class="text-xs text-slate-400">Thông tin này sẽ tự động hiển thị trên Hóa Đơn Nhiệt K80 và mã VietQR nhận tiền tại POS</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Store Info Form -->
+                    <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 text-xs">
+                        <h3 class="font-extrabold text-white text-sm flex items-center gap-2">
+                            <span>🏪</span>
+                            <span>Thông Tin Cửa Hàng (In trên Bill K80)</span>
+                        </h3>
+                        <div>
+                            <label class="text-slate-400 block mb-1">Tên Quán (*):</label>
+                            <input type="text" id="setting-store-name" value="AROMA COFFEE ROASTERY" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-bold focus:outline-none focus:border-amber-500">
+                        </div>
+                        <div>
+                            <label class="text-slate-400 block mb-1">Địa Chỉ (*):</label>
+                            <input type="text" id="setting-store-address" value="120 Nguyễn Huệ, Quận 1, TP.HCM" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-amber-500">
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-slate-400 block mb-1">Hotline:</label>
+                                <input type="text" id="setting-store-phone" value="0901 112 222" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-amber-500">
+                            </div>
+                            <div>
+                                <label class="text-slate-400 block mb-1">Mật khẩu Wifi:</label>
+                                <input type="text" id="setting-store-wifi" value="Aroma@8888" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-amber-500">
+                            </div>
+                        </div>
+                        <button onclick="saveStoreSettings()" class="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md transition-all">
+                            ✓ LƯU CẤU HÌNH CỬA HÀNG
+                        </button>
+                    </div>
+
+                    <!-- VietQR Bank Account Configuration -->
+                    <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 text-xs">
+                        <h3 class="font-extrabold text-white text-sm flex items-center gap-2">
+                            <span>💳</span>
+                            <span>Tài Khoản Nhận Tiền VietQR (Napas 247)</span>
+                        </h3>
+                        <div>
+                            <label class="text-slate-400 block mb-1">Ngân Hàng Thụ Hưởng:</label>
+                            <select id="setting-bank-code" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-bold focus:outline-none focus:border-amber-500">
+                                <option value="970422">MB Bank (Ngân hàng Quân Đội)</option>
+                                <option value="970436">Vietcombank (Ngoại thương VN)</option>
+                                <option value="970407">Techcombank (Kỹ thương VN)</option>
+                                <option value="970415">VietinBank (Công thương VN)</option>
+                                <option value="970416">ACB (Á Châu)</option>
+                                <option value="970432">VPBank (Việt Nam Thịnh Vượng)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-slate-400 block mb-1">Số Tài Khoản (STK) (*):</label>
+                            <input type="text" id="setting-bank-acc" value="99998888" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-mono text-sm font-bold focus:outline-none focus:border-amber-500">
+                        </div>
+                        <div>
+                            <label class="text-slate-400 block mb-1">Tên Chủ Tài Khoản (In hoa không dấu) (*):</label>
+                            <input type="text" id="setting-bank-name" value="AROMA COFFEE ROASTERY" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-bold uppercase focus:outline-none focus:border-amber-500">
+                        </div>
+                        <button onclick="saveVietQrSettings()" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs shadow-md transition-all">
+                            ✓ LƯU THÔNG TIN VIETQR
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================================= -->
+            <!-- PHÂN HỆ 6: GÓI DỊCH VỤ SAAS                                    -->
+            <!-- ============================================================= -->
+            <section id="view-subscription" class="tab-view space-y-6">
+                <div class="p-6 rounded-2xl bg-gradient-to-r from-amber-950/50 via-slate-900 to-slate-900 border border-amber-500/40 shadow-xl space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-extrabold text-[10px] uppercase border border-amber-500/40">Gói Thuê Bao Hiện Tại</span>
+                                <span class="text-xs text-emerald-400 font-bold flex items-center gap-1">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Đang hoạt động
+                                </span>
+                            </div>
+                            <h2 class="text-2xl font-black text-white mt-1">Gói Tiêu Chuẩn (Pro Plan)</h2>
+                            <p class="text-xs text-slate-400">Phí dịch vụ: <strong class="text-amber-400 font-mono">699.000 đ/tháng</strong> • Chu kỳ trả hàng năm</p>
+                        </div>
+                        <button onclick="openUpgradeModal()" class="px-5 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/25 flex items-center gap-2 hover:scale-[1.02] transition-all">
+                            <span>⚡ NÂNG CẤP LÊN ENTERPRISE</span>
+                        </button>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-800 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800">
+                            <span class="text-[11px] text-slate-400 block">Ngày Hết Hạn Thuê Bao:</span>
+                            <span class="text-base font-extrabold text-white font-mono" id="sub-expiry-date">26/03/2027</span>
+                        </div>
+                        <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800">
+                            <span class="text-[11px] text-slate-400 block">Thời Gian Sử Dụng Còn Lại:</span>
+                            <span class="text-base font-extrabold text-emerald-400 font-mono">182 Ngày Còn Lại</span>
+                        </div>
+                        <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800">
+                            <span class="text-[11px] text-slate-400 block">Hạn Mức Bàn Đã Sử Dụng:</span>
+                            <span class="text-base font-extrabold text-amber-400 font-mono" id="sub-tables-ratio">9 / 30 Bàn (30%)</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================================= -->
+            <!-- PHÂN HỆ 7: BÁO CÁO DOANH THU                                  -->
+            <!-- ============================================================= -->
+            <section id="view-reports" class="tab-view space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+                        <span class="text-xs text-slate-400 font-semibold">Doanh Thu Hôm Nay</span>
+                        <div class="text-2xl font-black text-amber-400 mt-1 font-mono" id="store-report-rev">8.450.000 đ</div>
+                        <span class="text-[11px] text-emerald-400 font-bold">↑ 18.5% so với hôm qua</span>
+                    </div>
+                    <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+                        <span class="text-xs text-slate-400 font-semibold">Tổng Hóa Đơn Đã Thanh Toán</span>
+                        <div class="text-2xl font-black text-white mt-1" id="store-report-count">82 đơn</div>
+                        <span class="text-[11px] text-slate-400">Bình quân 103k/đơn</span>
+                    </div>
+                    <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+                        <span class="text-xs text-slate-400 font-semibold">Thanh Toán Qua VietQR Động</span>
+                        <div class="text-2xl font-black text-emerald-400 mt-1 font-mono" id="store-report-qr">5.915.000 đ</div>
+                        <span class="text-[11px] text-slate-400">Tự khớp giao dịch 100%</span>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- ========================================================================= -->
+    <!-- MODALS: SỬA/XÓA BÀN, THỰC ĐƠN, ĐỔI ẢNH, NHÂN VIÊN, HÓA ĐƠN               -->
+    <!-- ========================================================================= -->
+
+    <!-- MODAL 1: THÊM / SỬA BÀN (Bàn Quản Lý Thuần Túy) -->
+    <div id="modal-table" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-2xl p-6 space-y-4 text-xs animate-in fade-in zoom-in duration-200">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="font-extrabold text-white text-sm" id="modal-table-title">Thêm Bàn Mới</h3>
+                <button onclick="closeTableModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+            </div>
+            <input type="hidden" id="table-edit-id">
+            <div>
+                <label class="text-slate-400 block mb-1">Tên Bàn (*):</label>
+                <input type="text" id="table-name-input" placeholder="VD: Bàn 10" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-bold focus:outline-none focus:border-amber-500">
+            </div>
+            <div>
+                <label class="text-slate-400 block mb-1">Khu Vực Phục Vụ:</label>
+                <select id="table-area-input" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-bold focus:outline-none">
+                    <option value="Tầng 1 - Máy Lạnh">Tầng 1 - Máy Lạnh</option>
+                    <option value="Sân Vườn Nhiệt Đới">Sân Vườn Nhiệt Đới</option>
+                    <option value="Phòng Lạnh VIP">Phòng Lạnh VIP</option>
+                    <option value="Tầng Lầu Ban Công">Tầng Lầu Ban Công</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-slate-400 block mb-1">Số Chỗ Ngồi (Capacity):</label>
+                <input type="number" id="table-capacity-input" value="4" min="1" max="20" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-mono focus:outline-none focus:border-amber-500">
+            </div>
+            <div>
+                <label class="text-slate-400 block mb-1">Trạng Thái Bàn:</label>
+                <select id="table-status-input" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none">
+                    <option value="active">Sẵn Sàng Đón Khách</option>
+                    <option value="maintenance">Tạm Khóa (Bảo trì/Sửa chữa)</option>
+                </select>
+            </div>
+            <div class="flex gap-2 pt-2 border-t border-slate-800">
+                <button onclick="closeTableModal()" class="flex-1 py-2.5 rounded-xl border border-slate-700 text-slate-400 font-bold">Hủy</button>
+                <button onclick="saveTableForm()" class="flex-1 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-black">LƯU BÀN</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: THÊM / SỬA MÓN & ĐỔI HÌNH ẢNH MÓN -->
+    <div id="modal-menu" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 w-full max-w-lg rounded-2xl p-6 space-y-4 text-xs animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="font-extrabold text-white text-sm" id="modal-menu-title">Chỉnh Sửa Món Thực Đơn</h3>
+                <button onclick="closeMenuModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+            </div>
+            <input type="hidden" id="menu-edit-id">
+
+            <!-- Image Preview & Change Section -->
+            <div class="p-3.5 rounded-xl bg-slate-850 border border-slate-800 flex items-center gap-4">
+                <div id="menu-img-preview" class="w-20 h-20 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-3xl overflow-hidden shrink-0 shadow-inner">
+                    ☕
+                </div>
+                <div class="flex-1 space-y-1.5">
+                    <label class="font-bold text-slate-300 block">Hình ảnh món:</label>
+                    <input type="text" id="menu-img-url" oninput="updateMenuImgPreview()" placeholder="Dán link ảnh (https://...) hoặc nhập Emoji" class="w-full px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-white font-mono text-[11px] focus:outline-none focus:border-amber-500">
+                    <div class="flex items-center gap-1.5 text-[10px] text-slate-400">
+                        <span>Gợi ý nhanh:</span>
+                        <button type="button" onclick="setPresetImg('☕')" class="px-1.5 py-0.5 rounded bg-slate-700 hover:bg-slate-600 text-white">☕ Cà phê</button>
+                        <button type="button" onclick="setPresetImg('🍹')" class="px-1.5 py-0.5 rounded bg-slate-700 hover:bg-slate-600 text-white">🍹 Trà đào</button>
+                        <button type="button" onclick="setPresetImg('🧋')" class="px-1.5 py-0.5 rounded bg-slate-700 hover:bg-slate-600 text-white">🧋 Trà sữa</button>
+                        <button type="button" onclick="setPresetImg('🍰')" class="px-1.5 py-0.5 rounded bg-slate-700 hover:bg-slate-600 text-white">🍰 Bánh ngọt</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="col-span-2">
+                    <label class="text-slate-400 block mb-1">Tên Món (*):</label>
+                    <input type="text" id="menu-name-input" placeholder="VD: Cà Phê Muối Đặc Biệt" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-bold focus:outline-none focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="text-slate-400 block mb-1">Danh Mục:</label>
+                    <select id="menu-cat-input" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-bold focus:outline-none">
+                        <option value="Cà Phê">Cà Phê</option>
+                        <option value="Trà & Macchiato">Trà & Macchiato</option>
+                        <option value="Đá Xay - Freeze">Đá Xay - Freeze</option>
+                        <option value="Bánh Ngọt">Bánh Ngọt</option>
+                        <option value="Topping">Topping gọi thêm</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-slate-400 block mb-1">Mã SKU (*):</label>
+                    <input type="text" id="menu-sku-input" placeholder="CF-SALT" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-mono uppercase focus:outline-none focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="text-slate-400 block mb-1">Đơn Giá Bán (VNĐ) (*):</label>
+                    <input type="number" id="menu-price-input" placeholder="35000" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-mono text-sm font-bold focus:outline-none focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="text-slate-400 block mb-1">Trạng Thái Bán:</label>
+                    <select id="menu-status-input" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none">
+                        <option value="true">Đang Mở Bán</option>
+                        <option value="false">Tạm Ngưng / Hết Hàng</option>
+                    </select>
+                </div>
+                <div class="col-span-2">
+                    <label class="text-slate-400 block mb-1">Mô Tả Hương Vị:</label>
+                    <input type="text" id="menu-desc-input" placeholder="VD: Kem muối béo mặn sánh mịn đặc sản Huế" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-amber-500">
+                </div>
+            </div>
+
+            <div class="flex gap-2 pt-2 border-t border-slate-800">
+                <button onclick="closeMenuModal()" class="flex-1 py-2.5 rounded-xl border border-slate-700 text-slate-400 font-bold">Hủy Bỏ</button>
+                <button onclick="saveMenuForm()" class="flex-1 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-black shadow-lg">LƯU MÓN</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: THÊM / SỬA NHÂN VIÊN & PHÂN QUYỀN VAI TRÒ -->
+    <div id="modal-staff" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-2xl p-6 space-y-4 text-xs animate-in fade-in zoom-in duration-200">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="font-extrabold text-white text-sm" id="modal-staff-title">Thêm Nhân Sự Mới</h3>
+                <button onclick="closeStaffModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+            </div>
+            <input type="hidden" id="staff-edit-id">
+
+            <div>
+                <label class="text-slate-400 block mb-1">Họ Và Tên (*):</label>
+                <input type="text" id="staff-name-input" placeholder="VD: Trần Thu Ngân" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-bold focus:outline-none focus:border-amber-500">
+            </div>
+
+            <div>
+                <label class="text-slate-400 block mb-1">Phân Quyền Vai Trò (*):</label>
+                <select id="staff-role-input" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-bold focus:outline-none">
+                    <option value="Cashier">Thu Ngân (Chỉ dùng màn hình POS)</option>
+                    <option value="Waiter">Nhân Viên Order (Chỉ dùng điện thoại gọi món)</option>
+                    <option value="Barista">Pha Chế Barista (Chỉ dùng màn hình KDS)</option>
+                    <option value="Manager">Quản Lý Ca (Toàn quyền quản lý ca & hủy hóa đơn)</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="text-slate-400 block mb-1">Số Điện Thoại:</label>
+                <input type="tel" id="staff-phone-input" placeholder="0908 888 777" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-mono focus:outline-none focus:border-amber-500">
+            </div>
+
+            <div>
+                <label class="text-slate-400 block mb-1">Mã PIN Đăng Nhập / Xác Thực (4 số):</label>
+                <input type="password" maxlength="6" id="staff-pin-input" placeholder="1234" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-mono text-center text-sm font-bold tracking-widest focus:outline-none focus:border-amber-500">
+            </div>
+
+            <div class="flex gap-2 pt-2 border-t border-slate-800">
+                <button onclick="closeStaffModal()" class="flex-1 py-2.5 rounded-xl border border-slate-700 text-slate-400 font-bold">Hủy</button>
+                <button onclick="saveStaffForm()" class="flex-1 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-black">LƯU NHÂN SỰ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: QUẢN LÝ / SỬA / HỦY HÓA ĐƠN (CHỈ DÀNH CHO ADMIN) -->
+    <div id="modal-invoice-action" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 w-full max-w-md rounded-2xl p-6 space-y-4 text-xs animate-in fade-in zoom-in duration-200">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <div>
+                    <h3 class="font-extrabold text-white text-sm" id="modal-inv-code">Hóa đơn: INV-001</h3>
+                    <p class="text-[10px] text-amber-400">Quyền hạn Quản Lý / Chủ Quán</p>
+                </div>
+                <button onclick="closeInvoiceActionModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-850 border border-slate-800 space-y-2">
+                <div class="flex justify-between">
+                    <span class="text-slate-400">Bàn phục vụ:</span>
+                    <strong class="text-white" id="modal-inv-table">Bàn 01</strong>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">Thời gian tạo:</span>
+                    <span class="text-slate-300 font-mono" id="modal-inv-time">26/09/2026 19:50</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">Tổng tiền hóa đơn:</span>
+                    <strong class="text-amber-400 font-mono text-sm" id="modal-inv-total">115.000 đ</strong>
+                </div>
+            </div>
+
+            <div>
+                <label class="text-slate-400 block mb-1">Phương thức thanh toán:</label>
+                <select id="modal-inv-paymethod" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-bold focus:outline-none">
+                    <option value="vietqr">VietQR Pro (Chuyển khoản)</option>
+                    <option value="cash">Tiền mặt</option>
+                    <option value="card">Thẻ POS</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="text-slate-400 block mb-1">Lý do điều chỉnh / hủy hóa đơn (*):</label>
+                <input type="text" id="modal-inv-reason" placeholder="VD: Khách đổi ý, thu ngân nhập nhầm..." class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-amber-500">
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800">
+                <button onclick="confirmUpdateInvoice()" class="py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-300 font-bold">
+                    ✏️ Cập Nhật Đơn
+                </button>
+                <button onclick="confirmVoidInvoiceAdmin()" class="py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-black shadow-md">
+                    🗑️ HỦY HÓA ĐƠN
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-5 right-5 z-50 transform translate-y-[-150%] transition-transform duration-300 px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 text-xs font-bold border bg-slate-900 border-amber-500/50 text-amber-400">
+        <span id="toast-msg">Thông báo</span>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- STORE ADMIN JAVASCRIPT LOGIC (PURE MANAGEMENT)                            -->
+    <!-- ========================================================================= -->
+    <script>
+        // State Persistence in LocalStorage
+        let storeTables = JSON.parse(localStorage.getItem('admin_store_tables') || 'null');
+        if (!storeTables) {
+            storeTables = [
+                { id: 1, name: 'Bàn 01', area: 'Tầng 1 - Máy Lạnh', capacity: 4, status: 'active' },
+                { id: 2, name: 'Bàn 02', area: 'Tầng 1 - Máy Lạnh', capacity: 4, status: 'active' },
+                { id: 3, name: 'Bàn 03', area: 'Sân Vườn Nhiệt Đới', capacity: 6, status: 'active' },
+                { id: 4, name: 'Bàn 04', area: 'Sân Vườn Nhiệt Đới', capacity: 4, status: 'active' },
+                { id: 5, name: 'Bàn 05', area: 'Sân Vườn Nhiệt Đới', capacity: 2, status: 'active' },
+                { id: 6, name: 'Bàn VIP 01', area: 'Phòng Lạnh VIP', capacity: 8, status: 'active' },
+                { id: 7, name: 'Bàn VIP 02', area: 'Phòng Lạnh VIP', capacity: 6, status: 'active' },
+                { id: 8, name: 'Bàn Ban Công 01', area: 'Tầng Lầu Ban Công', capacity: 4, status: 'active' },
+                { id: 9, name: 'Bàn Ban Công 02', area: 'Tầng Lầu Ban Công', capacity: 4, status: 'maintenance' }
+            ];
+            localStorage.setItem('admin_store_tables', JSON.stringify(storeTables));
+        }
+
+        let storeMenu = JSON.parse(localStorage.getItem('admin_store_menu') || 'null');
+        if (!storeMenu) {
+            storeMenu = [
+                { id: 1, name: 'Cà Phê Muối Đặc Biệt', cat: 'Cà Phê', sku: 'CF-SALT', price: 35000, img: '☕', desc: 'Kem muối béo mặn sánh mịn', available: true },
+                { id: 2, name: 'Trà Sen Vàng Hạt Dẻ', cat: 'Trà & Macchiato', sku: 'TEA-LOTUS', price: 45000, img: '🪷', desc: 'Hạt sen ninh nhừ bùi béo', available: true },
+                { id: 3, name: 'Cà Phê Sữa Đá Sài Gòn', cat: 'Cà Phê', sku: 'CF-MILK', price: 29000, img: '🥤', desc: 'Robusta Buôn Ma Thuột đậm vị', available: true },
+                { id: 4, name: 'Trà Đào Cam Sả Tươi', cat: 'Trà & Macchiato', sku: 'TEA-PEACH', price: 42000, img: '🍑', desc: 'Miếng đào giòn ngọt thanh', available: true },
+                { id: 5, name: 'Matcha Đá Xay Hạnh Nhân', cat: 'Đá Xay - Freeze', sku: 'ICE-MATCHA', price: 48000, img: '🍃', desc: 'Matcha Uji phủ kem tươi', available: true },
+                { id: 6, name: 'Bánh Tiramisu Truyền Thống', cat: 'Bánh Ngọt', sku: 'CAKE-TIRA', price: 40000, img: '🍰', desc: 'Cacao Bỉ và rượu rum thơm', available: true }
+            ];
+            localStorage.setItem('admin_store_menu', JSON.stringify(storeMenu));
+        }
+
+        let storeStaff = JSON.parse(localStorage.getItem('admin_store_staff') || 'null');
+        if (!storeStaff) {
+            storeStaff = [
+                { id: 1, name: 'Lê Hữu Nghĩa', role: 'Manager', phone: '0901 112 222', pin: '8888', status: 'active' },
+                { id: 2, name: 'Trần Thu Ngân', role: 'Cashier', phone: '0908 888 777', pin: '1234', status: 'active' },
+                { id: 3, name: 'Hoàng Nhân Order', role: 'Waiter', phone: '0905 555 666', pin: '2345', status: 'active' },
+                { id: 4, name: 'Nguyễn Văn Barista', role: 'Barista', phone: '0912 333 444', pin: '3456', status: 'active' }
+            ];
+            localStorage.setItem('admin_store_staff', JSON.stringify(storeStaff));
+        }
+
+        let activeInvoiceCode = null;
+        let MAX_TABLES_ALLOWED = 30; // Quota Pro Plan
+
+        function switchStoreTab(tabId, btn) {
+            document.querySelectorAll('.tab-view').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(b => {
+                b.className = 'nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all font-bold';
+            });
+            document.getElementById(`view-${tabId}`).classList.add('active');
+            btn.className = 'nav-item active w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-black transition-all';
+
+            if (tabId === 'invoices') {
+                refreshInvoicesList();
+            }
+        }
+
+        // ==========================================
+        // 1. CHỨC NĂNG SƠ ĐỒ BÀN (THUẦN QUẢN LÝ)
+        // ==========================================
+        function renderTables() {
+            const tbody = document.getElementById('store-tables-body');
+            document.getElementById('tables-usage-text').textContent = `${storeTables.length} / ${MAX_TABLES_ALLOWED} bàn`;
+            document.getElementById('sub-tables-ratio').textContent = `${storeTables.length} / ${MAX_TABLES_ALLOWED} Bàn (${Math.round((storeTables.length / MAX_TABLES_ALLOWED) * 100)}%)`;
+
+            tbody.innerHTML = storeTables.map(t => `
+                <tr class="hover:bg-slate-850/50 transition-colors">
+                    <td class="py-3 px-5 font-bold text-white flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full ${t.status === 'active' ? 'bg-emerald-400' : 'bg-slate-500'}"></span>
+                        <span>${t.name}</span>
+                    </td>
+                    <td class="py-3 px-4 text-slate-300">${t.area}</td>
+                    <td class="py-3 px-4 font-mono font-bold text-amber-400">👥 ${t.capacity} chỗ</td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black ${
+                            t.status === 'active' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-700 text-slate-300'
+                        }">
+                            ${t.status === 'active' ? 'Hoạt động' : 'Tạm khóa bảo trì'}
+                        </span>
+                    </td>
+                    <td class="py-3 px-5 text-right space-x-1.5">
+                        <button onclick="openEditTableModal(${t.id})" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 font-bold text-[11px] transition-all">
+                            ✏️ Sửa
+                        </button>
+                        <button onclick="deleteTable(${t.id})" class="px-2.5 py-1 rounded-lg bg-rose-950/40 hover:bg-rose-900 text-rose-400 border border-rose-800/50 font-bold text-[11px] transition-all">
+                            🗑️ Xóa
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openAddTableModal() {
+            if (storeTables.length >= MAX_TABLES_ALLOWED) {
+                alert(`⚠️ Quán đã đạt giới hạn tối đa ${MAX_TABLES_ALLOWED} bàn của gói Pro! Vui lòng nâng cấp gói SaaS để mở rộng.`);
+                return;
+            }
+            document.getElementById('modal-table-title').textContent = 'Thêm Bàn Mới';
+            document.getElementById('table-edit-id').value = '';
+            document.getElementById('table-name-input').value = `Bàn ${storeTables.length + 1 < 10 ? '0' : ''}${storeTables.length + 1}`;
+            document.getElementById('table-capacity-input').value = 4;
+            document.getElementById('modal-table').classList.remove('hidden');
+        }
+
+        function openEditTableModal(id) {
+            const table = storeTables.find(t => t.id === id);
+            if (!table) return;
+
+            document.getElementById('modal-table-title').textContent = `Chỉnh Sửa: ${table.name}`;
+            document.getElementById('table-edit-id').value = table.id;
+            document.getElementById('table-name-input').value = table.name;
+            document.getElementById('table-area-input').value = table.area;
+            document.getElementById('table-capacity-input').value = table.capacity;
+            document.getElementById('table-status-input').value = table.status;
+            document.getElementById('modal-table').classList.remove('hidden');
+        }
+
+        function closeTableModal() {
+            document.getElementById('modal-table').classList.add('hidden');
+        }
+
+        function saveTableForm() {
+            const editId = document.getElementById('table-edit-id').value;
+            const name = document.getElementById('table-name-input').value.trim();
+            const area = document.getElementById('table-area-input').value;
+            const capacity = parseInt(document.getElementById('table-capacity-input').value, 10) || 4;
+            const status = document.getElementById('table-status-input').value;
+
+            if (!name) return alert('Vui lòng nhập tên bàn!');
+
+            if (editId) {
+                // Update
+                const table = storeTables.find(t => t.id === parseInt(editId, 10));
+                if (table) {
+                    table.name = name;
+                    table.area = area;
+                    table.capacity = capacity;
+                    table.status = status;
+                    showToast(`✓ Đã cập nhật thành công bàn "${name}"`, 'success');
+                }
+            } else {
+                // Add
+                storeTables.push({
+                    id: Date.now(),
+                    name: name,
+                    area: area,
+                    capacity: capacity,
+                    status: status
+                });
+                showToast(`✓ Đã thêm bàn mới: "${name}"`, 'success');
+            }
+
+            localStorage.setItem('admin_store_tables', JSON.stringify(storeTables));
+            closeTableModal();
+            renderTables();
+        }
+
+        function deleteTable(id) {
+            const table = storeTables.find(t => t.id === id);
+            if (!table) return;
+
+            if (confirm(`Bạn có chắc chắn muốn xóa "${table.name}" khỏi danh sách bàn của quán?`)) {
+                storeTables = storeTables.filter(t => t.id !== id);
+                localStorage.setItem('admin_store_tables', JSON.stringify(storeTables));
+                renderTables();
+                showToast(`✓ Đã xóa bàn "${table.name}"`, 'info');
+            }
+        }
+
+        // ==========================================
+        // 2. CHỨC NĂNG THỰC ĐƠN & ĐỔI HÌNH ẢNH MÓN
+        // ==========================================
+        function renderMenu() {
+            const tbody = document.getElementById('store-menu-body');
+            tbody.innerHTML = storeMenu.map(m => {
+                const isImage = m.img && (m.img.startsWith('http') || m.img.startsWith('data:'));
+                return `
+                    <tr class="hover:bg-slate-850/50 transition-colors">
+                        <td class="py-3 px-5 font-bold text-white flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
+                                ${isImage ? `<img src="${m.img}" alt="${m.name}" class="w-full h-full object-cover">` : `<span class="text-xl">${m.img || '☕'}</span>`}
+                            </div>
+                            <div>
+                                <div class="font-extrabold text-white text-xs">${m.name}</div>
+                                <div class="text-[10px] text-slate-400">${m.desc || ''}</div>
+                            </div>
+                        </td>
+                        <td class="py-3 px-4 text-slate-300 font-semibold">${m.cat}</td>
+                        <td class="py-3 px-4 font-mono text-slate-400">${m.sku}</td>
+                        <td class="py-3 px-4 font-mono font-bold text-amber-400">${new Intl.NumberFormat('vi-VN').format(m.price)} đ</td>
+                        <td class="py-3 px-4">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-black ${
+                                m.available ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'
+                            }">
+                                ${m.available ? '✓ Đang bán' : 'Tạm ngưng'}
+                            </span>
+                        </td>
+                        <td class="py-3 px-5 text-right space-x-1.5">
+                            <button onclick="openEditMenuModal(${m.id})" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 font-bold text-[11px] transition-all">
+                                ✏️ Sửa & Đổi ảnh
+                            </button>
+                            <button onclick="deleteMenuItem(${m.id})" class="px-2.5 py-1 rounded-lg bg-rose-950/40 hover:bg-rose-900 text-rose-400 border border-rose-800/50 font-bold text-[11px] transition-all">
+                                🗑️ Xóa
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function openAddMenuModal() {
+            document.getElementById('modal-menu-title').textContent = 'Thêm Món Mới';
+            document.getElementById('menu-edit-id').value = '';
+            document.getElementById('menu-name-input').value = '';
+            document.getElementById('menu-sku-input').value = 'SKU-' + Math.floor(100 + Math.random() * 900);
+            document.getElementById('menu-price-input').value = '';
+            document.getElementById('menu-desc-input').value = '';
+            document.getElementById('menu-img-url').value = '☕';
+            updateMenuImgPreview();
+            document.getElementById('modal-menu').classList.remove('hidden');
+        }
+
+        function openEditMenuModal(id) {
+            const item = storeMenu.find(m => m.id === id);
+            if (!item) return;
+
+            document.getElementById('modal-menu-title').textContent = `Chỉnh Sửa: ${item.name}`;
+            document.getElementById('menu-edit-id').value = item.id;
+            document.getElementById('menu-name-input').value = item.name;
+            document.getElementById('menu-cat-input').value = item.cat;
+            document.getElementById('menu-sku-input').value = item.sku;
+            document.getElementById('menu-price-input').value = item.price;
+            document.getElementById('menu-desc-input').value = item.desc || '';
+            document.getElementById('menu-status-input').value = item.available ? 'true' : 'false';
+            document.getElementById('menu-img-url').value = item.img || '☕';
+            updateMenuImgPreview();
+            document.getElementById('modal-menu').classList.remove('hidden');
+        }
+
+        function closeMenuModal() {
+            document.getElementById('modal-menu').classList.add('hidden');
+        }
+
+        function setPresetImg(emoji) {
+            document.getElementById('menu-img-url').value = emoji;
+            updateMenuImgPreview();
+        }
+
+        function updateMenuImgPreview() {
+            const val = document.getElementById('menu-img-url').value.trim() || '☕';
+            const preview = document.getElementById('menu-img-preview');
+            if (val.startsWith('http') || val.startsWith('data:')) {
+                preview.innerHTML = `<img src="${val}" alt="Preview" class="w-full h-full object-cover">`;
+            } else {
+                preview.innerHTML = `<span class="text-3xl">${val}</span>`;
+            }
+        }
+
+        function saveMenuForm() {
+            const editId = document.getElementById('menu-edit-id').value;
+            const name = document.getElementById('menu-name-input').value.trim();
+            const cat = document.getElementById('menu-cat-input').value;
+            const sku = document.getElementById('menu-sku-input').value.trim() || 'SKU-001';
+            const price = parseInt(document.getElementById('menu-price-input').value, 10);
+            const desc = document.getElementById('menu-desc-input').value.trim();
+            const available = document.getElementById('menu-status-input').value === 'true';
+            const img = document.getElementById('menu-img-url').value.trim() || '☕';
+
+            if (!name || isNaN(price) || price <= 0) {
+                alert('Vui lòng nhập Tên món và Đơn giá hợp lệ!');
+                return;
+            }
+
+            if (editId) {
+                const item = storeMenu.find(m => m.id === parseInt(editId, 10));
+                if (item) {
+                    item.name = name;
+                    item.cat = cat;
+                    item.sku = sku;
+                    item.price = price;
+                    item.desc = desc;
+                    item.available = available;
+                    item.img = img;
+                    showToast(`✓ Đã cập nhật món "${name}" và hình ảnh mới!`, 'success');
+                }
+            } else {
+                storeMenu.push({
+                    id: Date.now(),
+                    name: name,
+                    cat: cat,
+                    sku: sku,
+                    price: price,
+                    desc: desc,
+                    available: available,
+                    img: img
+                });
+                showToast(`✓ Đã thêm món mới: "${name}"`, 'success');
+            }
+
+            localStorage.setItem('admin_store_menu', JSON.stringify(storeMenu));
+            closeMenuModal();
+            renderMenu();
+        }
+
+        function deleteMenuItem(id) {
+            const item = storeMenu.find(m => m.id === id);
+            if (!item) return;
+
+            if (confirm(`Bạn có chắc muốn xóa món "${item.name}" khỏi thực đơn?`)) {
+                storeMenu = storeMenu.filter(m => m.id !== id);
+                localStorage.setItem('admin_store_menu', JSON.stringify(storeMenu));
+                renderMenu();
+                showToast(`✓ Đã xóa món "${item.name}"`, 'info');
+            }
+        }
+
+        // ==========================================
+        // 3. CHỨC NĂNG NHÂN VIÊN & PHÂN QUYỀN
+        // ==========================================
+        function renderStaff() {
+            const tbody = document.getElementById('store-staff-body');
+            tbody.innerHTML = storeStaff.map(s => {
+                let roleBadge = 'bg-slate-700 text-slate-300';
+                let roleTitle = s.role;
+                if (s.role === 'Manager') { roleBadge = 'bg-amber-500/20 text-amber-300 border border-amber-500/40'; roleTitle = '👑 Quản Lý Ca / Admin'; }
+                else if (s.role === 'Cashier') { roleBadge = 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'; roleTitle = '💻 Thu Ngân (Chỉ POS)'; }
+                else if (s.role === 'Waiter') { roleBadge = 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40'; roleTitle = '📱 Order Tại Bàn (Mobile)'; }
+                else if (s.role === 'Barista') { roleBadge = 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'; roleTitle = '🍹 Pha Chế (Chỉ KDS)'; }
+
+                return `
+                    <tr class="hover:bg-slate-850/50 transition-colors">
+                        <td class="py-3 px-5 font-bold text-white">${s.name}</td>
+                        <td class="py-3 px-4">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-black ${roleBadge}">
+                                ${roleTitle}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 font-mono text-slate-400">${s.phone}</td>
+                        <td class="py-3 px-4 font-mono text-slate-400">••••</td>
+                        <td class="py-3 px-4">
+                            <span class="text-emerald-400 font-bold text-[10px]">✓ Hoạt động</span>
+                        </td>
+                        <td class="py-3 px-5 text-right space-x-1.5">
+                            <button onclick="openEditStaffModal(${s.id})" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 font-bold text-[11px] transition-all">
+                                ✏️ Sửa & PIN
+                            </button>
+                            ${s.role !== 'Manager' ? `
+                            <button onclick="deleteStaff(${s.id})" class="px-2.5 py-1 rounded-lg bg-rose-950/40 hover:bg-rose-900 text-rose-400 border border-rose-800/50 font-bold text-[11px] transition-all">
+                                🗑️ Xóa
+                            </button>` : ''}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function openAddStaffModal() {
+            document.getElementById('modal-staff-title').textContent = 'Thêm Nhân Sự Mới';
+            document.getElementById('staff-edit-id').value = '';
+            document.getElementById('staff-name-input').value = '';
+            document.getElementById('staff-phone-input').value = '';
+            document.getElementById('staff-pin-input').value = '1234';
+            document.getElementById('modal-staff').classList.remove('hidden');
+        }
+
+        function openEditStaffModal(id) {
+            const staff = storeStaff.find(s => s.id === id);
+            if (!staff) return;
+
+            document.getElementById('modal-staff-title').textContent = `Chỉnh Sửa Nhân Sự: ${staff.name}`;
+            document.getElementById('staff-edit-id').value = staff.id;
+            document.getElementById('staff-name-input').value = staff.name;
+            document.getElementById('staff-role-input').value = staff.role;
+            document.getElementById('staff-phone-input').value = staff.phone;
+            document.getElementById('staff-pin-input').value = staff.pin || '1234';
+            document.getElementById('modal-staff').classList.remove('hidden');
+        }
+
+        function closeStaffModal() {
+            document.getElementById('modal-staff').classList.add('hidden');
+        }
+
+        function saveStaffForm() {
+            const editId = document.getElementById('staff-edit-id').value;
+            const name = document.getElementById('staff-name-input').value.trim();
+            const role = document.getElementById('staff-role-input').value;
+            const phone = document.getElementById('staff-phone-input').value.trim() || '0900 000 000';
+            const pin = document.getElementById('staff-pin-input').value.trim() || '1234';
+
+            if (!name) return alert('Vui lòng nhập tên nhân viên!');
+
+            if (editId) {
+                const staff = storeStaff.find(s => s.id === parseInt(editId, 10));
+                if (staff) {
+                    staff.name = name;
+                    staff.role = role;
+                    staff.phone = phone;
+                    staff.pin = pin;
+                    showToast(`✓ Đã cập nhật nhân viên "${name}" (${role})`, 'success');
+                }
+            } else {
+                storeStaff.push({
+                    id: Date.now(),
+                    name: name,
+                    role: role,
+                    phone: phone,
+                    pin: pin,
+                    status: 'active'
+                });
+                showToast(`✓ Đã cấp tài khoản cho nhân sự mới: "${name}"`, 'success');
+            }
+
+            localStorage.setItem('admin_store_staff', JSON.stringify(storeStaff));
+            closeStaffModal();
+            renderStaff();
+        }
+
+        function deleteStaff(id) {
+            const staff = storeStaff.find(s => s.id === id);
+            if (!staff) return;
+
+            if (confirm(`Bạn có chắc muốn xóa nhân sự "${staff.name}" (${staff.role}) khỏi hệ thống?`)) {
+                storeStaff = storeStaff.filter(s => s.id !== id);
+                localStorage.setItem('admin_store_staff', JSON.stringify(storeStaff));
+                renderStaff();
+                showToast(`✓ Đã xóa tài khoản "${staff.name}"`, 'info');
+            }
+        }
+
+        // ==========================================
+        // 4. QUẢN LÝ HÓA ĐƠN (CHỈ DÀNH CHO ADMIN)
+        // ==========================================
+        function refreshInvoicesList() {
+            const history = JSON.parse(localStorage.getItem('pos_invoices_history') || '[]');
+            const tbody = document.getElementById('store-invoices-body');
+
+            if (history.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="py-12 text-center text-slate-500">
+                            Chưa có hóa đơn nào phát sinh trong ngày
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = history.map(inv => {
+                const isVoided = inv.status === 'voided';
+                return `
+                    <tr class="hover:bg-slate-850/50 transition-colors ${isVoided ? 'opacity-50 line-through' : ''}">
+                        <td class="py-3 px-5 font-mono font-bold text-amber-400">${inv.code}</td>
+                        <td class="py-3 px-4 text-slate-400">${inv.time}</td>
+                        <td class="py-3 px-4 text-white font-semibold">${inv.tableName}</td>
+                        <td class="py-3 px-4 font-mono font-bold text-emerald-400">${inv.total}</td>
+                        <td class="py-3 px-4 font-bold uppercase text-[10px] text-slate-300">${inv.payMethod}</td>
+                        <td class="py-3 px-4">
+                            <span class="px-2 py-0.5 rounded-full text-[9px] font-black ${
+                                isVoided ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' : 'bg-emerald-500/20 text-emerald-300'
+                            }">
+                                ${isVoided ? 'ĐÃ HỦY' : 'THÀNH CÔNG'}
+                            </span>
+                        </td>
+                        <td class="py-3 px-5 text-right space-x-1.5">
+                            <button onclick="openInvoiceActionModal('${inv.code}')" class="px-2.5 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/40 font-bold text-[11px] transition-all">
+                                🛡️ Quản Lý Đơn
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function openInvoiceActionModal(code) {
+            const history = JSON.parse(localStorage.getItem('pos_invoices_history') || '[]');
+            const inv = history.find(i => i.code === code);
+            if (!inv) return;
+
+            activeInvoiceCode = code;
+            document.getElementById('modal-inv-code').textContent = `Hóa Đơn: ${inv.code}`;
+            document.getElementById('modal-inv-table').textContent = inv.tableName;
+            document.getElementById('modal-inv-time').textContent = inv.time;
+            document.getElementById('modal-inv-total').textContent = inv.total;
+            document.getElementById('modal-inv-paymethod').value = inv.payMethod;
+            document.getElementById('modal-inv-reason').value = inv.voidReason || '';
+            document.getElementById('modal-invoice-action').classList.remove('hidden');
+        }
+
+        function closeInvoiceActionModal() {
+            document.getElementById('modal-invoice-action').classList.add('hidden');
+        }
+
+        function confirmUpdateInvoice() {
+            const history = JSON.parse(localStorage.getItem('pos_invoices_history') || '[]');
+            const inv = history.find(i => i.code === activeInvoiceCode);
+            if (!inv) return;
+
+            const newMethod = document.getElementById('modal-inv-paymethod').value;
+            const reason = document.getElementById('modal-inv-reason').value.trim();
+
+            inv.payMethod = newMethod;
+            if (reason) inv.adminNote = reason;
+            localStorage.setItem('pos_invoices_history', JSON.stringify(history));
+
+            closeInvoiceActionModal();
+            refreshInvoicesList();
+            showToast(`✓ Đã cập nhật thành công hóa đơn ${activeInvoiceCode}!`, 'success');
+        }
+
+        function confirmVoidInvoiceAdmin() {
+            const reason = document.getElementById('modal-inv-reason').value.trim();
+            if (!reason) {
+                alert('Vui lòng nhập lý do hủy hóa đơn để đối soát sổ sách!');
+                return;
+            }
+
+            if (!confirm(`XÁC NHẬN: Bạn với tư cách Quản Lý có chắc chắn muốn HỦY hóa đơn ${activeInvoiceCode}?\nLý do: "${reason}"`)) {
+                return;
+            }
+
+            const history = JSON.parse(localStorage.getItem('pos_invoices_history') || '[]');
+            const inv = history.find(i => i.code === activeInvoiceCode);
+            if (inv) {
+                inv.status = 'voided';
+                inv.voidReason = reason;
+                localStorage.setItem('pos_invoices_history', JSON.stringify(history));
+                closeInvoiceActionModal();
+                refreshInvoicesList();
+                showToast(`✓ Quản lý đã hủy hóa đơn ${activeInvoiceCode} thành công.`, 'info');
+            }
+        }
+
+        // ==========================================
+        // 5. CÀI ĐẶT QUÁN & VIETQR
+        // ==========================================
+        function saveStoreSettings() {
+            const name = document.getElementById('setting-store-name').value.trim();
+            const address = document.getElementById('setting-store-address').value.trim();
+            const phone = document.getElementById('setting-store-phone').value.trim();
+            const wifi = document.getElementById('setting-store-wifi').value.trim();
+
+            const config = { name, address, phone, wifi };
+            localStorage.setItem('store_info_config', JSON.stringify(config));
+            document.getElementById('sidebar-store-title').textContent = name;
+            showToast('✓ Đã cập nhật thông tin cửa hàng thành công!', 'success');
+        }
+
+        function saveVietQrSettings() {
+            const bankCode = document.getElementById('setting-bank-code').value;
+            const bankAcc = document.getElementById('setting-bank-acc').value.trim();
+            const bankName = document.getElementById('setting-bank-name').value.trim();
+
+            const qrConfig = { bankCode, bankAcc, bankName };
+            localStorage.setItem('store_vietqr_config', JSON.stringify(qrConfig));
+            showToast(`✓ Đã lưu tài khoản VietQR: ${bankAcc} (${bankName})!`, 'success');
+        }
+
+        function openUpgradeModal() {
+            alert('Mở cổng nâng cấp gói Enterprise');
+        }
+
+        function showToast(msg, type = 'info') {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').textContent = msg;
+            toast.style.transform = 'translateY(0)';
+            setTimeout(() => { toast.style.transform = 'translateY(-150%)'; }, 3200);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderTables();
+            renderMenu();
+            renderStaff();
+
+            const savedInfo = JSON.parse(localStorage.getItem('store_info_config') || '{}');
+            if (savedInfo.name) {
+                document.getElementById('setting-store-name').value = savedInfo.name;
+                document.getElementById('sidebar-store-title').textContent = savedInfo.name;
+            }
+            if (savedInfo.address) document.getElementById('setting-store-address').value = savedInfo.address;
+            if (savedInfo.phone) document.getElementById('setting-store-phone').value = savedInfo.phone;
+            if (savedInfo.wifi) document.getElementById('setting-store-wifi').value = savedInfo.wifi;
+
+            const savedQr = JSON.parse(localStorage.getItem('store_vietqr_config') || '{}');
+            if (savedQr.bankCode) document.getElementById('setting-bank-code').value = savedQr.bankCode;
+            if (savedQr.bankAcc) document.getElementById('setting-bank-acc').value = savedQr.bankAcc;
+            if (savedQr.bankName) document.getElementById('setting-bank-name').value = savedQr.bankName;
+        });
+    </script>
+</body>
+</html>

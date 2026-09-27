@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="vi" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin Platform - CafeManager SaaS Hub</title>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        if (window.tailwind) {
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        fontFamily: {
+                            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+                        },
+                        colors: {
+                            indigo: {
+                                500: '#6366f1',
+                                600: '#4f46e5',
+                                700: '#4338ca',
+                            },
+                            amber: {
+                                500: '#f59e0b',
+                                600: '#d97706',
+                            }
+                        }
+                    }
+                }
+            };
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+        ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.3); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.6); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body class="h-full font-sans antialiased bg-slate-950 text-slate-100 flex flex-col overflow-hidden">
+
+    <!-- Top Navigation Bar for SaaS Owner -->
+    <header class="h-16 px-6 bg-slate-900 border-b border-slate-800 flex items-center justify-between shrink-0 z-20">
+        <div class="flex items-center gap-4">
+            <a href="index.html" class="flex items-center gap-3 group">
+                <span class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xl shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-transform">👑</span>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-sm font-extrabold text-white tracking-tight">CafeManager SaaS</h1>
+                        <span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 uppercase">Chủ App / Super Admin</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400">Trung Tâm Điều Hành B2B Đa Chi Nhánh</p>
+                </div>
+            </a>
+
+            <!-- Sub Nav Tabs -->
+            <nav class="hidden md:flex items-center gap-1.5 ml-6 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-bold">
+                <button onclick="switchTab('stores', this)" class="nav-tab active px-3.5 py-1.5 rounded-lg bg-indigo-600 text-white shadow-md shadow-indigo-600/30 flex items-center gap-1.5 transition-all">
+                    <span>🏪 Danh Sách Quán (Stores)</span>
+                </button>
+                <button onclick="switchTab('plans', this)" class="nav-tab px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-1.5 transition-all">
+                    <span>📦 Gói Dịch Vụ (Plans)</span>
+                </button>
+                <button onclick="switchTab('revenue', this)" class="nav-tab px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-1.5 transition-all">
+                    <span>💳 Doanh Thu & Thuê Bao</span>
+                </button>
+            </nav>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button onclick="openCreatePlanModal()" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-600/30 flex items-center gap-1.5 transition-all">
+                <span>+ TẠO GÓI PLANS MỚI</span>
+            </button>
+            <a href="store-admin-dashboard.html" title="Chuyển sang góc nhìn Chủ quán" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 font-bold text-xs transition-all flex items-center gap-1">
+                <span>🏪 Xem Store Admin</span> ➔
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content Body -->
+    <main class="flex-1 overflow-y-auto p-6 lg:p-8 bg-slate-950">
+        <div class="max-w-7xl mx-auto space-y-6">
+
+            <!-- Global SaaS KPIs Summary -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+                    <span class="text-xs font-semibold text-slate-400">Doanh Thu Thuê Bao Hàng Tháng (MRR)</span>
+                    <div class="text-2xl font-black text-emerald-400 mt-1 font-mono">38.450.000 đ</div>
+                    <div class="text-[11px] text-emerald-400 font-semibold mt-2">↑ 18.2% tăng trưởng tháng này</div>
+                </div>
+
+                <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+                    <span class="text-xs font-semibold text-slate-400">Tổng Số Quán (Stores)</span>
+                    <div class="text-2xl font-black text-white mt-1" id="kpi-total-stores">24 <small class="text-xs text-slate-500">quán</small></div>
+                    <div class="text-[11px] text-slate-400 mt-2">21 Active • 2 Sắp hết hạn • 1 Expired</div>
+                </div>
+
+                <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+                    <span class="text-xs font-semibold text-slate-400">Gói Được Mua Nhiều Nhất</span>
+                    <div class="text-2xl font-black text-indigo-400 mt-1">Gói Pro (699k)</div>
+                    <div class="text-[11px] text-slate-400 mt-2">Chiếm 62% tổng số khách hàng</div>
+                </div>
+
+                <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+                    <span class="text-xs font-semibold text-slate-400">Hạn Mức Bàn Đang Cấp Phát</span>
+                    <div class="text-2xl font-black text-amber-400 mt-1">680 <small class="text-xs text-slate-500">bàn</small></div>
+                    <div class="text-[11px] text-slate-400 mt-2">Tỷ lệ sử dụng thực tế: 72%</div>
+                </div>
+            </div>
+
+            <!-- ============================================================= -->
+            <!-- TAB 1: DANH SÁCH QUÁN & TRẠNG THÁI THANH TOÁN (STORES)        -->
+            <!-- ============================================================= -->
+            <section id="tab-stores" class="tab-content active space-y-4">
+                <div class="rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden shadow-xl">
+                    <div class="p-5 border-b border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <div>
+                            <h2 class="text-base font-extrabold text-white">Quản Lý Toàn Bộ Cửa Hàng (Stores / Tenants)</h2>
+                            <p class="text-xs text-slate-400">Theo dõi thời hạn thuê bao, trạng thái thanh toán và số bàn thực tế của từng quán</p>
+                        </div>
+                        <div class="flex items-center gap-2.5">
+                            <input type="text" id="search-store-input" oninput="filterStoresTable(this.value)" placeholder="Tìm kiếm tên quán, mã quán..." class="px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+                            <select id="filter-status-select" onchange="filterStoresByStatus(this.value)" class="bg-slate-800 text-xs rounded-xl px-3 py-1.5 border border-slate-700 text-slate-200 focus:outline-none">
+                                <option value="all">Tất cả trạng thái</option>
+                                <option value="Active">Đang hoạt động (Active)</option>
+                                <option value="Trial">Dùng thử (Trial)</option>
+                                <option value="Expired">Hết hạn (Expired)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Stores Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-950/70 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+                                <tr>
+                                    <th class="py-3.5 px-5">Mã & Tên Quán</th>
+                                    <th class="py-3.5 px-4">Chủ Quán / SĐT</th>
+                                    <th class="py-3.5 px-4">Gói SaaS Đăng Ký</th>
+                                    <th class="py-3.5 px-4">Bàn Thực Tế / Giới Hạn</th>
+                                    <th class="py-3.5 px-4">Ngày Hết Hạn (ExpiryDate)</th>
+                                    <th class="py-3.5 px-4">Trạng Thái</th>
+                                    <th class="py-3.5 px-5 text-right">Thao Tác Quản Trị</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800/80" id="stores-table-body">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================================= -->
+            <!-- TAB 2: QUẢN LÝ GÓI DỊCH VỤ (PLANS MANAGEMENT)                -->
+            <!-- ============================================================= -->
+            <section id="tab-plans" class="tab-content space-y-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-base font-extrabold text-white">Bảng Gói Dịch Vụ SaaS (Plans)</h2>
+                        <p class="text-xs text-slate-400">Cấu hình giá tiền, hạn mức số lượng bàn và cờ tính năng phân tầng</p>
+                    </div>
+                    <button onclick="openCreatePlanModal()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs shadow-md shadow-indigo-600/30 flex items-center gap-1.5">
+                        <span>+ THÊM GÓI MỚI</span>
+                    </button>
+                </div>
+
+                <!-- Plans Cards Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5" id="plans-grid">
+                    <!-- Populated dynamically -->
+                </div>
+            </section>
+
+            <!-- ============================================================= -->
+            <!-- TAB 3: NHẬT KÝ GIAO DỊCH & THUÊ BAO (REVENUE)                 -->
+            <!-- ============================================================= -->
+            <section id="tab-revenue" class="tab-content space-y-4">
+                <div class="rounded-2xl bg-slate-900 border border-slate-800 p-5 space-y-4">
+                    <h2 class="text-base font-extrabold text-white">Lịch Sử Thanh Toán Thuê Bao SaaS Gần Nhất</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-950/70 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+                                <tr>
+                                    <th class="py-3 px-4">Mã Hóa Đơn</th>
+                                    <th class="py-3 px-4">Tên Quán</th>
+                                    <th class="py-3 px-4">Gói Gia Hạn</th>
+                                    <th class="py-3 px-4">Thời Lượng</th>
+                                    <th class="py-3 px-4">Số Tiền</th>
+                                    <th class="py-3 px-4">Kênh Thanh Toán</th>
+                                    <th class="py-3 px-4 text-right">Thời Gian</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800 text-slate-300">
+                                <tr>
+                                    <td class="py-3 px-4 font-mono font-bold text-indigo-400">INV-SAAS-9821</td>
+                                    <td class="py-3 px-4 font-bold text-white">Aroma Coffee Roastery</td>
+                                    <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold text-[10px]">ENTERPRISE</span></td>
+                                    <td class="py-3 px-4">1 Năm (12 tháng)</td>
+                                    <td class="py-3 px-4 font-mono font-bold text-emerald-400">14.990.000 đ</td>
+                                    <td class="py-3 px-4">VietQR MB Bank</td>
+                                    <td class="py-3 px-4 text-right text-slate-500">26/09/2026 14:20</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-4 font-mono font-bold text-indigo-400">INV-SAAS-9820</td>
+                                    <td class="py-3 px-4 font-bold text-white">Little Bean Coffee</td>
+                                    <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-bold text-[10px]">PRO</span></td>
+                                    <td class="py-3 px-4">6 Tháng</td>
+                                    <td class="py-3 px-4 font-mono font-bold text-emerald-400">3.990.000 đ</td>
+                                    <td class="py-3 px-4">Chuyển khoản VCB</td>
+                                    <td class="py-3 px-4 text-right text-slate-500">25/09/2026 10:15</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- ========================================================================= -->
+    <!-- MODAL: TẠO GÓI DỊCH VỤ SAAS (PLANS) MỚI                                   -->
+    <!-- ========================================================================= -->
+    <div id="modal-create-plan" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700/80 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 bg-slate-850 border-b border-slate-800 flex items-center justify-between">
+                <div>
+                    <h3 class="font-extrabold text-white text-base">Cấp / Tạo Gói Dịch Vụ SaaS Mới</h3>
+                    <p class="text-[11px] text-indigo-400">Định cấu hình giá, hạn mức bàn và cờ tính năng (Feature Flags)</p>
+                </div>
+                <button onclick="closeCreatePlanModal()" class="text-slate-400 hover:text-white text-lg p-1">✕</button>
+            </div>
+
+            <!-- Form Content -->
+            <form onsubmit="handleCreatePlan(event)" class="p-6 space-y-4 text-xs">
+                <!-- Mã & Tên Gói -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="font-bold text-slate-300 block mb-1">Mã Gói (PlanCode) (*):</label>
+                        <input type="text" id="inp-plan-code" required placeholder="VD: ULTRA_VIP" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-mono uppercase focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-300 block mb-1">Tên Gói Hiển Thị (*):</label>
+                        <input type="text" id="inp-plan-name" required placeholder="VD: Gói Chuỗi Nhượng Quyền" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+
+                <!-- Bảng giá -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="font-bold text-slate-300 block mb-1">Giá Hàng Tháng (VNĐ) (*):</label>
+                        <input type="number" id="inp-plan-monthly" required placeholder="999000" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-mono focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-300 block mb-1">Giá 1 Năm Trọn Gói (VNĐ):</label>
+                        <input type="number" id="inp-plan-annual" required placeholder="9990000" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-mono focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+
+                <!-- Hạn mức Quota -->
+                <div class="grid grid-cols-2 gap-3 p-3 bg-slate-950/60 rounded-xl border border-slate-800">
+                    <div>
+                        <label class="font-bold text-amber-400 block mb-1">Số Bàn Tối Đa (MaxTables):</label>
+                        <input type="number" id="inp-plan-tables" required value="50" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-mono focus:outline-none">
+                        <span class="text-[10px] text-slate-500 mt-1 block">Nhập 999 nếu không giới hạn</span>
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-300 block mb-1">Số Nhân Viên Tối Đa (MaxStaff):</label>
+                        <input type="number" id="inp-plan-staff" required value="15" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-mono focus:outline-none">
+                    </div>
+                </div>
+
+                <!-- Cờ tính năng (Feature Flags) -->
+                <div>
+                    <label class="font-bold text-indigo-300 block mb-2">Cờ Tính Năng Đi Kèm (Feature Flags):</label>
+                    <div class="grid grid-cols-2 gap-2 p-3 bg-slate-950/60 rounded-xl border border-slate-800">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="flag-crm" checked class="rounded border-slate-700 text-indigo-600 focus:ring-0">
+                            <span class="text-white font-semibold">CRM Khách Quen & Tích Điểm</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="flag-inventory" class="rounded border-slate-700 text-indigo-600 focus:ring-0">
+                            <span class="text-white font-semibold">Quản Lý Kho Nguyên Liệu</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="flag-qr" checked class="rounded border-slate-700 text-indigo-600 focus:ring-0">
+                            <span class="text-white font-semibold">Gọi Món QR Tại Bàn</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="flag-kds" checked class="rounded border-slate-700 text-indigo-600 focus:ring-0">
+                            <span class="text-white font-semibold">Màn Hình Barista KDS</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer col-span-2">
+                            <input type="checkbox" id="flag-multibranch" class="rounded border-slate-700 text-indigo-600 focus:ring-0">
+                            <span class="text-white font-semibold">Quản Lý Chuỗi Đa Chi Nhánh</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Submit buttons -->
+                <div class="pt-3 border-t border-slate-800 flex justify-end gap-2.5">
+                    <button type="button" onclick="closeCreatePlanModal()" class="px-4 py-2 rounded-xl border border-slate-700 text-slate-400 hover:text-white font-bold">Hủy</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold shadow-lg shadow-indigo-600/30">🚀 Lưu Gói Mới</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-5 right-5 z-50 transform translate-y-[-150%] transition-transform duration-300 px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 text-xs font-bold border bg-indigo-950 border-indigo-500/50 text-indigo-200">
+        <span id="toast-msg">Thông báo</span>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- SUPER ADMIN LOGIC JAVASCRIPT                                              -->
+    <!-- ========================================================================= -->
+    <script>
+        // Database Mock
+        let plansData = [
+            {
+                id: 1,
+                code: 'STARTER',
+                name: 'Gói Khởi Nghiệp (Starter)',
+                monthly: 299000,
+                annual: 2990000,
+                maxTables: 10,
+                maxStaff: 3,
+                crm: false,
+                inventory: false,
+                qr: true,
+                kds: true,
+                multibranch: false,
+                tag: 'Tiết kiệm'
+            },
+            {
+                id: 2,
+                code: 'PRO',
+                name: 'Gói Tiêu Chuẩn (Pro)',
+                monthly: 699000,
+                annual: 6990000,
+                maxTables: 30,
+                maxStaff: 10,
+                crm: true,
+                inventory: false,
+                qr: true,
+                kds: true,
+                multibranch: false,
+                tag: 'Phổ biến nhất'
+            },
+            {
+                id: 3,
+                code: 'ENTERPRISE',
+                name: 'Gói Doanh Nghiệp (Enterprise)',
+                monthly: 1499000,
+                annual: 14990000,
+                maxTables: 999,
+                maxStaff: 50,
+                crm: true,
+                inventory: true,
+                qr: true,
+                kds: true,
+                multibranch: true,
+                tag: 'Cao cấp'
+            }
+        ];
+
+        let storesData = [
+            {
+                id: 1,
+                code: 'STORE-HCM-01',
+                name: 'Aroma Coffee Roastery',
+                owner: 'Lê Hữu Nghĩa',
+                phone: '0901 112 222',
+                planCode: 'ENTERPRISE',
+                planName: 'Enterprise',
+                currentTables: 18,
+                maxTables: 999,
+                expiryDate: '26/09/2027',
+                status: 'Active'
+            },
+            {
+                id: 2,
+                code: 'STORE-HN-02',
+                name: 'Little Bean Coffee',
+                owner: 'Trần Văn Đậu',
+                phone: '0903 334 444',
+                planCode: 'STARTER',
+                planName: 'Starter',
+                currentTables: 8,
+                maxTables: 10,
+                expiryDate: '15/03/2027',
+                status: 'Active'
+            },
+            {
+                id: 3,
+                code: 'STORE-DN-03',
+                name: 'Old Time Cafe',
+                owner: 'Nguyễn Văn Cũ',
+                phone: '0905 556 666',
+                planCode: 'PRO',
+                planName: 'Pro',
+                currentTables: 24,
+                maxTables: 30,
+                expiryDate: '01/08/2026',
+                status: 'Expired'
+            }
+        ];
+
+        function formatMoney(amount) {
+            return new Intl.NumberFormat('vi-VN').format(amount) + ' đ';
+        }
+
+        // Tab Switching
+        function switchTab(tabId, el) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(b => {
+                b.className = 'nav-tab px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-1.5 transition-all';
+            });
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            el.className = 'nav-tab active px-3.5 py-1.5 rounded-lg bg-indigo-600 text-white shadow-md shadow-indigo-600/30 flex items-center gap-1.5 transition-all';
+        }
+
+        // Render Stores Table
+        function renderStores(filteredList = storesData) {
+            const tbody = document.getElementById('stores-table-body');
+            document.getElementById('kpi-total-stores').innerHTML = `${storesData.length} <small class="text-xs text-slate-500">quán</small>`;
+
+            tbody.innerHTML = filteredList.map(s => {
+                let badgeClass = s.status === 'Active' ? 'text-emerald-400 bg-emerald-500/15 border-emerald-500/30' : 'text-rose-400 bg-rose-500/15 border-rose-500/30';
+                let statusLabel = s.status === 'Active' ? '✓ Đang hoạt động' : '⚠️ Đã hết hạn';
+
+                return `
+                    <tr class="hover:bg-slate-850/50 transition-colors">
+                        <td class="py-3.5 px-5">
+                            <div class="font-bold text-white text-xs">${s.name}</div>
+                            <span class="text-[10px] text-indigo-400 font-mono font-semibold">${s.code}</span>
+                        </td>
+                        <td class="py-3.5 px-4">
+                            <div class="text-slate-200 font-medium">${s.owner}</div>
+                            <span class="text-[10px] text-slate-500 font-mono">${s.phone}</span>
+                        </td>
+                        <td class="py-3.5 px-4">
+                            <span class="px-2 py-0.5 rounded font-extrabold text-[10px] uppercase ${
+                                s.planCode === 'ENTERPRISE' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40' :
+                                s.planCode === 'PRO' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40' :
+                                'bg-slate-800 text-slate-300 border border-slate-700'
+                            }">${s.planName}</span>
+                        </td>
+                        <td class="py-3.5 px-4 font-mono font-semibold text-slate-300">
+                            ${s.currentTables} / ${s.maxTables === 999 ? '∞' : s.maxTables} bàn
+                        </td>
+                        <td class="py-3.5 px-4 font-mono ${s.status === 'Expired' ? 'text-rose-400 font-bold' : 'text-slate-300'}">
+                            ${s.expiryDate}
+                        </td>
+                        <td class="py-3.5 px-4">
+                            <span class="px-2 py-0.5 rounded-full border text-[10px] font-bold ${badgeClass}">
+                                ${statusLabel}
+                            </span>
+                        </td>
+                        <td class="py-3.5 px-5 text-right space-x-1.5">
+                            <button onclick="renewStore(${s.id})" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-emerald-600 hover:text-white text-emerald-400 font-bold text-[10px] border border-slate-700 transition-all">
+                                + Gia Hạn
+                            </button>
+                            <button onclick="upgradeStorePlan(${s.id})" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-indigo-600 hover:text-white text-indigo-300 font-bold text-[10px] border border-slate-700 transition-all">
+                                Đổi Gói
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterStoresTable(keyword) {
+            const clean = keyword.toLowerCase().trim();
+            const filtered = storesData.filter(s => s.name.toLowerCase().includes(clean) || s.code.toLowerCase().includes(clean) || s.owner.toLowerCase().includes(clean));
+            renderStores(filtered);
+        }
+
+        function filterStoresByStatus(status) {
+            if (status === 'all') return renderStores(storesData);
+            const filtered = storesData.filter(s => s.status === status);
+            renderStores(filtered);
+        }
+
+        // Render Plans Cards
+        function renderPlans() {
+            const grid = document.getElementById('plans-grid');
+            grid.innerHTML = plansData.map(p => `
+                <div class="rounded-2xl bg-slate-900 border ${p.code === 'PRO' ? 'border-indigo-500 shadow-xl shadow-indigo-500/10' : 'border-slate-800'} p-6 flex flex-col justify-between relative">
+                    ${p.tag ? `<span class="absolute top-4 right-4 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">${p.tag}</span>` : ''}
+                    <div>
+                        <h3 class="text-base font-extrabold text-white">${p.name}</h3>
+                        <div class="text-[10px] text-slate-500 font-mono mt-0.5">Mã: ${p.code}</div>
+                        
+                        <div class="my-4">
+                            <span class="text-2xl font-black text-white font-mono">${formatMoney(p.monthly)}</span>
+                            <span class="text-xs text-slate-400 font-normal"> / tháng</span>
+                            <div class="text-[11px] text-emerald-400 font-semibold mt-1">Trả năm: ${formatMoney(p.annual)}/năm</div>
+                        </div>
+
+                        <!-- Quota & Feature checklist -->
+                        <div class="space-y-2 py-3 border-t border-slate-800 text-xs">
+                            <div class="flex items-center gap-2">
+                                <span class="text-amber-400">🪑</span>
+                                <span>Giới hạn: <strong>${p.maxTables === 999 ? 'Không giới hạn' : p.maxTables + ' bàn'}</strong></span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-indigo-400">👥</span>
+                                <span>Tài khoản: <strong>${p.maxStaff} nhân viên</strong></span>
+                            </div>
+                            <div class="flex items-center gap-2 ${p.crm ? 'text-white' : 'text-slate-500 line-through'}">
+                                <span>${p.crm ? '✓' : '✗'}</span>
+                                <span>Phân hệ CRM Khách Quen</span>
+                            </div>
+                            <div class="flex items-center gap-2 ${p.inventory ? 'text-white' : 'text-slate-500 line-through'}">
+                                <span>${p.inventory ? '✓' : '✗'}</span>
+                                <span>Quản lý Kho Nguyên Liệu</span>
+                            </div>
+                            <div class="flex items-center gap-2 ${p.qr ? 'text-white' : 'text-slate-500 line-through'}">
+                                <span>${p.qr ? '✓' : '✗'}</span>
+                                <span>Gọi món QR Tại Bàn</span>
+                            </div>
+                            <div class="flex items-center gap-2 ${p.kds ? 'text-white' : 'text-slate-500 line-through'}">
+                                <span>${p.kds ? '✓' : '✗'}</span>
+                                <span>Màn hình Barista KDS</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-800 mt-4 flex gap-2">
+                        <button onclick="editPlan(${p.id})" class="flex-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300">Sửa Gói</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Modal Handlers
+        function openCreatePlanModal() {
+            document.getElementById('modal-create-plan').classList.remove('hidden');
+        }
+
+        function closeCreatePlanModal() {
+            document.getElementById('modal-create-plan').classList.add('hidden');
+        }
+
+        function handleCreatePlan(e) {
+            e.preventDefault();
+            const code = document.getElementById('inp-plan-code').value.toUpperCase().trim();
+            const name = document.getElementById('inp-plan-name').value.trim();
+            const monthly = parseInt(document.getElementById('inp-plan-monthly').value, 10);
+            const annual = parseInt(document.getElementById('inp-plan-annual').value, 10);
+            const maxTables = parseInt(document.getElementById('inp-plan-tables').value, 10);
+            const maxStaff = parseInt(document.getElementById('inp-plan-staff').value, 10);
+
+            const crm = document.getElementById('flag-crm').checked;
+            const inventory = document.getElementById('flag-inventory').checked;
+            const qr = document.getElementById('flag-qr').checked;
+            const kds = document.getElementById('flag-kds').checked;
+            const multibranch = document.getElementById('flag-multibranch').checked;
+
+            const newPlan = {
+                id: plansData.length + 1,
+                code,
+                name,
+                monthly,
+                annual,
+                maxTables,
+                maxStaff,
+                crm,
+                inventory,
+                qr,
+                kds,
+                multibranch,
+                tag: 'Gói tùy chỉnh'
+            };
+
+            plansData.push(newPlan);
+            closeCreatePlanModal();
+            renderPlans();
+            showToast(`🎉 Đã tạo thành công gói dịch vụ mới [${name}]!`);
+        }
+
+        function renewStore(storeId) {
+            const store = storesData.find(s => s.id === storeId);
+            if (!store) return;
+            store.status = 'Active';
+            store.expiryDate = '26/09/2027';
+            renderStores();
+            showToast(`✓ Đã gia hạn thành công 1 năm cho quán "${store.name}"!`);
+        }
+
+        function upgradeStorePlan(storeId) {
+            const store = storesData.find(s => s.id === storeId);
+            if (!store) return;
+            const choice = prompt(`Chọn gói nâng cấp cho "${store.name}" (STARTER, PRO, ENTERPRISE):`, 'ENTERPRISE');
+            if (choice) {
+                const plan = plansData.find(p => p.code === choice.toUpperCase());
+                if (plan) {
+                    store.planCode = plan.code;
+                    store.planName = plan.name;
+                    store.maxTables = plan.maxTables;
+                    renderStores();
+                    showToast(`✓ Đã chuyển đổi "${store.name}" sang [${plan.name}]!`);
+                }
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').textContent = msg;
+            toast.style.transform = 'translateY(0)';
+            setTimeout(() => { toast.style.transform = 'translateY(-150%)'; }, 3000);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderStores();
+            renderPlans();
+        });
+    </script>
+</body>
+</html>

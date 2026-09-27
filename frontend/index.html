@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CafeManager POS - Hệ thống Quản trị & Bán hàng Quán Cà phê</title>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon">☕</div>
+                <div class="brand-text">
+                    <h2>CafeManager</h2>
+                    <span class="badge">POS Pro</span>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <div class="nav-item active" data-tab="overview">
+                    <span class="nav-icon">📊</span>
+                    <span>Tổng quan</span>
+                </div>
+                <div class="nav-item" data-tab="tables">
+                    <span class="nav-icon">🪑</span>
+                    <span>Quản lý Bàn</span>
+                </div>
+                <div class="nav-item" data-tab="qr-order">
+                    <span class="nav-icon">📱</span>
+                    <span>QR Order</span>
+                </div>
+                <div class="nav-item" data-tab="barista">
+                    <span class="nav-icon">🍹</span>
+                    <span>Màn hình Barista</span>
+                </div>
+                <div class="nav-item" data-tab="crm">
+                    <span class="nav-icon">👥</span>
+                    <span>CRM Khách Quen</span>
+                </div>
+                <div class="nav-item" data-tab="reports">
+                    <span class="nav-icon">📈</span>
+                    <span>Báo cáo Doanh thu</span>
+                </div>
+                <div style="margin: 10px 0; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                    <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: #f59e0b; padding-left: 12px; margin-bottom: 6px;">Phân Hệ Vận Hành</div>
+                    <a href="store-admin-dashboard.html" class="nav-item" style="text-decoration:none;">
+                        <span class="nav-icon">🏪</span>
+                        <span>Quản Lý Quán (Admin) ➔</span>
+                    </a>
+                    <a href="pos.html" class="nav-item" style="text-decoration:none;">
+                        <span class="nav-icon">💻</span>
+                        <span>Quầy Thu Ngân (POS) ➔</span>
+                    </a>
+                    <a href="waiter-order.html" class="nav-item" style="text-decoration:none;">
+                        <span class="nav-icon">📱</span>
+                        <span>Order Điện Thoại (Waiter) ➔</span>
+                    </a>
+                    <a href="barista.html" class="nav-item" style="text-decoration:none;">
+                        <span class="nav-icon">☕</span>
+                        <span>Quầy Pha Chế (Barista KDS) ➔</span>
+                    </a>
+                    <a href="super-admin-dashboard.html" class="nav-item" style="text-decoration:none;">
+                        <span class="nav-icon">👑</span>
+                        <span>Super Admin (SaaS) ➔</span>
+                    </a>
+                </div>
+            </nav>
+
+            <div class="system-status">
+                <div class="status-indicator online"></div>
+                <div class="status-info">
+                    <span class="status-title">Hệ thống Trực tuyến</span>
+                    <span class="status-subtitle">Sẵn sàng vận hành 100%</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header Bar -->
+            <header class="top-header">
+                <div class="header-left">
+                    <h1 id="page-title">Tổng quan Hệ thống</h1>
+                    <p class="subtitle" id="page-subtitle">Chào buổi chiều, Quản lý ca • Chi nhánh Aroma Roastery</p>
+                </div>
+                <div class="header-right">
+                    <div class="clock-badge" id="live-clock">17:50:00</div>
+                    <a href="pos.html" class="btn btn-primary" id="btn-quick-order">
+                        <span>+ Bán Nhanh (POS)</span>
+                    </a>
+                </div>
+            </header>
+
+            <!-- ============================================================= -->
+            <!-- TAB 1: TỔNG QUAN (OVERVIEW)                                    -->
+            <!-- ============================================================= -->
+            <section class="tab-content active" id="tab-overview">
+                <!-- BẢNG ĐIỀU HƯỚNG PHÂN QUYỀN VAI TRÒ CHUYÊN BIỆT -->
+                <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.95)); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 20px; padding: 20px; margin-bottom: 24px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+                        <div>
+                            <h2 style="font-size: 16px; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px;">
+                                <span>🎯</span> PHÂN QUYỀN VAI TRÒ VẬN HÀNH (Mỗi vị trí chỉ dùng 1 màn hình)
+                            </h2>
+                            <p style="font-size: 12px; color: #94a3b8; margin: 4px 0 0 0;">Nhân viên truy cập trực tiếp vào phân hệ được cấp quyền để tối đa hiệu suất</p>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; color: #f59e0b; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); padding: 4px 10px; rounded-full: 999px; border-radius: 20px;">
+                            BẢO MẬT & ĐỘC LẬP
+                        </span>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
+                        <!-- Vai trò 1: Chủ quán / Quản lý -->
+                        <a href="store-admin-dashboard.html" style="text-decoration: none; background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.2s;" onmouseover="this.style.borderColor='#f59e0b'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#334155'; this.style.transform='none'">
+                            <div>
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                    <span style="font-size: 24px;">🏪</span>
+                                    <span style="font-size: 10px; font-weight: 800; background: rgba(245, 158, 11, 0.2); color: #f59e0b; padding: 2px 8px; border-radius: 6px;">QUẢN LÝ / CHỦ QUÁN</span>
+                                </div>
+                                <h3 style="font-size: 14px; font-weight: 800; color: #fff; margin: 0 0 6px 0;">Store Admin Portal</h3>
+                                <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.4;">
+                                    • Sơ đồ bàn: Thêm / Sửa / Xóa thuần quản lý<br>
+                                    • Menu món: Sửa giá, đổi hình ảnh trực quan<br>
+                                    • Nhân sự: Phân quyền vai trò, cấp mã PIN<br>
+                                    • Hóa đơn: Sửa PTTT và Hủy đơn đối soát
+                                </p>
+                            </div>
+                            <div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 11px; font-weight: 800; color: #f59e0b; display: flex; align-items: center; justify-content: space-between;">
+                                <span>Vào Quản Trị Quán</span>
+                                <span>➔</span>
+                            </div>
+                        </a>
+
+                        <!-- Vai trò 2: Thu ngân POS -->
+                        <a href="pos.html" style="text-decoration: none; background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.2s;" onmouseover="this.style.borderColor='#10b981'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#334155'; this.style.transform='none'">
+                            <div>
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                    <span style="font-size: 24px;">💻</span>
+                                    <span style="font-size: 10px; font-weight: 800; background: rgba(16, 185, 129, 0.2); color: #34d399; padding: 2px 8px; border-radius: 6px;">THU NGÂN (CASHIER)</span>
+                                </div>
+                                <h3 style="font-size: 14px; font-weight: 800; color: #fff; margin: 0 0 6px 0;">Màn Hình Bán Hàng (POS)</h3>
+                                <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.4;">
+                                    • Giao diện tablet/máy tính bán hàng cảm ứng<br>
+                                    • Hình món to rõ, thanh toán VietQR động / Tiền mặt<br>
+                                    • In hóa đơn K80, in tem ly dán cốc<br>
+                                    • 🔒 Khóa quyền: Nhân viên không được tự hủy hóa đơn
+                                </p>
+                            </div>
+                            <div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 11px; font-weight: 800; color: #34d399; display: flex; align-items: center; justify-content: space-between;">
+                                <span>Mở Màn Hình POS</span>
+                                <span>➔</span>
+                            </div>
+                        </a>
+
+                        <!-- Vai trò 3: Nhân viên Order tại bàn -->
+                        <a href="waiter-order.html" style="text-decoration: none; background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.2s;" onmouseover="this.style.borderColor='#38bdf8'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#334155'; this.style.transform='none'">
+                            <div>
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                    <span style="font-size: 24px;">📱</span>
+                                    <span style="font-size: 10px; font-weight: 800; background: rgba(56, 189, 248, 0.2); color: #38bdf8; padding: 2px 8px; border-radius: 6px;">PHỤC VỤ (WAITER)</span>
+                                </div>
+                                <h3 style="font-size: 14px; font-weight: 800; color: #fff; margin: 0 0 6px 0;">Order Điện Thoại Tại Bàn</h3>
+                                <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.4;">
+                                    • Giao diện Mobile-first tối ưu cho điện thoại<br>
+                                    • Thao tác nhanh: Chọn bàn ➔ Chọn món hình to<br>
+                                    • Tùy biến % đường, % đá, topping, ghi chú riêng<br>
+                                    • Bắn đơn 1-chạm đồng thời sang Barista & POS
+                                </p>
+                            </div>
+                            <div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 11px; font-weight: 800; color: #38bdf8; display: flex; align-items: center; justify-content: space-between;">
+                                <span>Mở Order Điện Thoại</span>
+                                <span>➔</span>
+                            </div>
+                        </a>
+
+                        <!-- Vai trò 4: Quầy pha chế Barista -->
+                        <a href="barista.html" style="text-decoration: none; background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.2s;" onmouseover="this.style.borderColor='#a855f7'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#334155'; this.style.transform='none'">
+                            <div>
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                    <span style="font-size: 24px;">☕</span>
+                                    <span style="font-size: 10px; font-weight: 800; background: rgba(168, 85, 247, 0.2); color: #c084fc; padding: 2px 8px; border-radius: 6px;">PHA CHẾ (BARISTA)</span>
+                                </div>
+                                <h3 style="font-size: 14px; font-weight: 800; color: #fff; margin: 0 0 6px 0;">Màn Hình KDS Quầy Bar</h3>
+                                <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.4;">
+                                    • Chỉ hiển thị hàng đợi chế biến (không tiền, không thu)<br>
+                                    • Chuông báo tự động mỗi khi có đơn từ điện thoại/POS<br>
+                                    • Đồng hồ đếm giờ thực tế, cảnh báo trễ đơn >10 phút<br>
+                                    • Nút bấm 1-chạm báo hoàn thành để phục vụ bưng ra
+                                </p>
+                            </div>
+                            <div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 11px; font-weight: 800; color: #c084fc; display: flex; align-items: center; justify-content: space-between;">
+                                <span>Mở Màn Hình Barista</span>
+                                <span>➔</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Features Hub Grid -->
+                <div class="features-grid">
+                    <!-- Card 1: Quản lý Bàn -->
+                    <div class="feature-card" data-jump="tables">
+                        <div class="card-badge green">18/24 Bàn Hoạt Động</div>
+                        <div class="card-icon">🪑</div>
+                        <h3>Quản lý Bàn</h3>
+                        <p>Theo dõi sơ đồ theo khu vực, trạng thái bàn trống/có khách, xử lý gộp bàn và tách bàn thời gian thực.</p>
+                        <div class="card-footer">
+                            <span class="status-pill available">6 Trống</span>
+                            <span class="status-pill occupied">16 Có khách</span>
+                            <span class="status-pill bill">2 Tính tiền</span>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: QR Order -->
+                    <div class="feature-card" data-jump="qr-order">
+                        <div class="card-badge orange">Đơn Tự Phục Vụ</div>
+                        <div class="card-icon">📱</div>
+                        <h3>QR Order Tại Bàn</h3>
+                        <p>Khách hàng quét mã QR tại bàn, chọn món, tùy biến đường/đá/topping và gửi đơn trực tiếp đến quầy.</p>
+                        <div class="card-footer">
+                            <span class="metric-text">⚡ 4 đơn vừa gửi qua QR</span>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: POS Thu ngân -->
+                    <a href="pos.html" class="feature-card highlighted" style="text-decoration:none;">
+                        <div class="card-badge purple">Màn Hình Bán Hàng</div>
+                        <div class="card-icon">💻</div>
+                        <h3>POS Thu Ngân</h3>
+                        <p>Giao diện cảm ứng chạm mượt mà, thanh toán tiền mặt, VietQR động, thẻ và in hóa đơn nhiệt siêu tốc.</p>
+                        <div class="card-footer">
+                            <span class="metric-text highlight-val">👉 Bấm để mở màn hình POS</span>
+                        </div>
+                    </a>
+
+                    <!-- Card 4: Màn hình Barista -->
+                    <div class="feature-card" data-jump="barista">
+                        <div class="card-badge amber">KDS Bar Chế Biến</div>
+                        <div class="card-icon">🍹</div>
+                        <h3>Màn hình Barista</h3>
+                        <p>Xếp hàng đơn chế biến theo thời gian thực, phân loại chờ làm - đang làm - đã xong, cảnh báo trễ đơn.</p>
+                        <div class="card-footer">
+                            <span class="status-pill pending">5 Đang chờ</span>
+                            <span class="status-pill brewing">3 Đang pha</span>
+                        </div>
+                    </div>
+
+                    <!-- Card 5: CRM Khách quen -->
+                    <div class="feature-card" data-jump="crm">
+                        <div class="card-badge blue">Chăm Sóc & Tích Điểm</div>
+                        <div class="card-icon">👥</div>
+                        <h3>CRM Khách Quen</h3>
+                        <p>Nhận diện khách theo SĐT, tích lũy điểm thưởng, nâng hạng thẻ (Đồng, Bạc, Vàng) và ưu đãi sinh nhật.</p>
+                        <div class="card-footer">
+                            <span class="metric-text">🌟 1,240 Thành viên đăng ký</span>
+                        </div>
+                    </div>
+
+                    <!-- Card 6: Báo cáo Doanh thu -->
+                    <div class="feature-card" data-jump="reports">
+                        <div class="card-badge teal">Báo Cáo & Phân Tích</div>
+                        <div class="card-icon">📊</div>
+                        <h3>Báo cáo Doanh Thu</h3>
+                        <p>Thống kê doanh thu theo giờ, món bán chạy (best-seller), phân tích dòng tiền và đối soát ca làm việc.</p>
+                        <div class="card-footer">
+                            <span class="metric-text highlight-val">💰 Doanh thu hôm nay: 8.450.000đ</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Quick Stats -->
+                <div class="metrics-row">
+                    <div class="stat-card">
+                        <span class="stat-label">Tổng Doanh Thu Ca Hiện Tại</span>
+                        <div class="stat-value">8.450.000 <small>VNĐ</small></div>
+                        <span class="stat-trend positive">↑ 18.5% so với cùng kỳ hôm qua</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Tổng Số Hóa Đơn</span>
+                        <div class="stat-value">82 <small>đơn</small></div>
+                        <span class="stat-trend positive">↑ 12 đơn so với ca sáng</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Tỷ Lệ Lấp Đầy Bàn</span>
+                        <div class="stat-value">75% <small>(18/24 bàn)</small></div>
+                        <span class="stat-trend warning">Giờ cao điểm chiều</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Thời Gian Pha Chế TB</span>
+                        <div class="stat-value">3.2 <small>phút/món</small></div>
+                        <span class="stat-trend positive">Đạt chuẩn &lt; 5 phút</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================================= -->
+            <!-- TAB 2: QUẢN LÝ BÀN (TABLES)                                    -->
+            <!-- ============================================================= -->
+            <section class="tab-content" id="tab-tables">
+                <!-- Area and Status Filters -->
+                <div class="filter-bar">
+                    <button class="filter-btn active" onclick="filterTables('all', this)">Tất cả (18 bàn)</button>
+                    <button class="filter-btn" onclick="filterTables('T1', this)">Tầng 1 - Máy Lạnh</button>
+                    <button class="filter-btn" onclick="filterTables('SV', this)">Sân Vườn</button>
+                    <button class="filter-btn" onclick="filterTables('VIP', this)">Phòng Lạnh VIP</button>
+                    <div style="margin-left: auto; display: flex; gap: 10px;">
+                        <span class="status-pill available">Trống: 6</span>
+                        <span class="status-pill occupied">Có khách: 9</span>
+                        <span class="status-pill bill">Chờ tính tiền: 2</span>
+                        <span class="status-pill brewing">Gộp: 1</span>
+                    </div>
+                </div>
+
+                <!-- Tables Visual Grid -->
+                <div class="tables-grid" id="tables-container">
+                    <!-- Rendered by JS -->
+                </div>
+            </section>
+
+            <!-- ============================================================= -->
+            <!-- TAB 3: QR ORDER TẠI BÀN (QR-ORDER)                             -->
+            <!-- ============================================================= -->
+            <section class="tab-content" id="tab-qr-order">
+                <div class="qr-simulator-wrap">
+                    <!-- Left: Smartphone Simulation for Customer -->
+                    <div class="phone-mockup">
+                        <div class="phone-screen">
+                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px; margin-bottom:12px;">
+                                <div>
+                                    <div style="font-size:0.75rem; color:#f59e0b; font-weight:700;">☕ Aroma Roastery</div>
+                                    <h4 style="font-size:0.95rem; font-weight:800;" id="qr-screen-table">Bàn 01 • Tầng 1</h4>
+                                </div>
+                                <span class="status-pill available" style="font-size:0.65rem;">QR Live</span>
+                            </div>
+
+                            <p style="font-size:0.75rem; color:#94a3b8; margin-bottom:12px;">Chạm vào món để gửi đơn ngay về quầy Barista:</p>
+
+                            <!-- Mini Menu in Phone -->
+                            <div style="display:flex; flex-direction:column; gap:8px; flex:1; overflow-y:auto; margin-bottom:12px;">
+                                <div onclick="selectQrItem('Cà Phê Muối Đặc Biệt', 35000)" style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; border:1px solid rgba(255,255,255,0.08);">
+                                    <div>
+                                        <div style="font-size:0.82rem; font-weight:700;">☕ Cà Phê Muối</div>
+                                        <div style="font-size:0.7rem; color:#f59e0b;">35.000 đ</div>
+                                    </div>
+                                    <span style="font-size:0.75rem; background:#f59e0b; color:#000; padding:2px 8px; border-radius:6px; font-weight:800;">+ Gọi</span>
+                                </div>
+
+                                <div onclick="selectQrItem('Trà Sen Vàng Hạt Dẻ', 45000)" style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; border:1px solid rgba(255,255,255,0.08);">
+                                    <div>
+                                        <div style="font-size:0.82rem; font-weight:700;">🪷 Trà Sen Vàng</div>
+                                        <div style="font-size:0.7rem; color:#f59e0b;">45.000 đ</div>
+                                    </div>
+                                    <span style="font-size:0.75rem; background:#f59e0b; color:#000; padding:2px 8px; border-radius:6px; font-weight:800;">+ Gọi</span>
+                                </div>
+
+                                <div onclick="selectQrItem('Bánh Tiramisu Phô Mai', 40000)" style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; border:1px solid rgba(255,255,255,0.08);">
+                                    <div>
+                                        <div style="font-size:0.82rem; font-weight:700;">🍰 Tiramisu Phô Mai</div>
+                                        <div style="font-size:0.7rem; color:#f59e0b;">40.000 đ</div>
+                                    </div>
+                                    <span style="font-size:0.75rem; background:#f59e0b; color:#000; padding:2px 8px; border-radius:6px; font-weight:800;">+ Gọi</span>
+                                </div>
+                            </div>
+
+                            <!-- Selected Items Preview in Phone -->
+                            <div style="background:rgba(0,0,0,0.4); padding:10px; border-radius:12px; margin-bottom:10px; border:1px solid rgba(255,255,255,0.08);">
+                                <div style="font-size:0.72rem; color:#94a3b8; margin-bottom:4px;">Món vừa chọn:</div>
+                                <div id="qr-selected-item" style="font-size:0.85rem; font-weight:700; color:#fff;">Chưa chọn món nào</div>
+                            </div>
+
+                            <button onclick="submitQrOrder()" class="btn btn-primary" style="width:100%; justify-content:center; padding:10px; font-size:0.85rem;">
+                                🚀 GỬI ĐƠN TẠI BÀN
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right: Table QR Code Generator & Instructions -->
+                    <div class="stat-card" style="padding:28px;">
+                        <h3 style="font-size:1.3rem; font-weight:800; margin-bottom:12px;">Tạo & In Mã QR Theo Từng Bàn</h3>
+                        <p style="font-size:0.9rem; color:#94a3b8; margin-bottom:20px;">
+                            Mỗi bàn được trang bị một mã QR động mã hóa thông tin StoreID và Số Bàn. Khách hàng chỉ cần bật camera điện thoại quét để gọi món.
+                        </p>
+
+                        <div style="display:flex; gap:20px; align-items:center; flex-wrap:wrap; margin-bottom:24px;">
+                            <!-- QR Visual Box -->
+                            <div style="width:160px; height:160px; background:#fff; border-radius:14px; padding:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:0 10px 20px rgba(0,0,0,0.4);">
+                                <div style="font-size:0.7rem; font-weight:800; color:#000; margin-bottom:4px;">QR ORDER PRO</div>
+                                <div style="width:110px; height:110px; background:#0f172a; border-radius:6px; display:grid; grid-template-columns:repeat(5,1fr); gap:3px; padding:8px;">
+                                    <div style="background:#fff;"></div><div style="background:#fff;"></div><div></div><div style="background:#fff;"></div><div style="background:#fff;"></div>
+                                    <div style="background:#fff;"></div><div></div><div style="background:#fff;"></div><div></div><div style="background:#fff;"></div>
+                                    <div></div><div style="background:#fff;"></div><div style="background:#f59e0b;"></div><div style="background:#fff;"></div><div></div>
+                                    <div style="background:#fff;"></div><div></div><div style="background:#fff;"></div><div></div><div style="background:#fff;"></div>
+                                    <div style="background:#fff;"></div><div style="background:#fff;"></div><div></div><div style="background:#fff;"></div><div style="background:#fff;"></div>
+                                </div>
+                                <div style="font-size:0.65rem; color:#64748b; font-weight:700; margin-top:4px;" id="qr-tag-label">BÀN 01</div>
+                            </div>
+
+                            <div style="flex:1; min-width:240px; display:flex; flex-direction:column; gap:12px;">
+                                <div>
+                                    <label style="font-size:0.8rem; color:#94a3b8; font-weight:600; display:block; margin-bottom:6px;">Chọn bàn hiển thị QR:</label>
+                                    <select id="qr-select-table" onchange="changeQrTable(this.value)" style="width:100%; padding:10px 14px; background:var(--bg-surface-elevated); border:1px solid var(--border-subtle); color:#fff; border-radius:8px; font-weight:700;">
+                                        <option value="Bàn 01">Bàn 01 (Tầng 1 Máy Lạnh)</option>
+                                        <option value="Bàn 02">Bàn 02 (Tầng 1 Máy Lạnh)</option>
+                                        <option value="Bàn 03">Bàn 03 (Sân Vườn)</option>
+                                        <option value="Bàn 04">Bàn 04 (Sân Vườn)</option>
+                                        <option value="Bàn VIP 01">Bàn VIP 01 (Phòng Lạnh)</option>
+                                    </select>
+                                </div>
+                                <div style="display:flex; gap:10px;">
+                                    <button onclick="showToast('Đang tải file PDF mã QR chuẩn in ấn 10x15cm...', 'info')" class="btn btn-secondary" style="flex:1;">🖨️ In Mã QR</button>
+                                    <button onclick="showToast('Đã sao chép liên kết QR vào bộ nhớ tạm!', 'success')" class="btn btn-primary" style="flex:1;">🔗 Sao Chép Link</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.25); border-radius:12px; padding:16px;">
+                            <h5 style="color:#fbbf24; font-size:0.85rem; font-weight:700; margin-bottom:4px;">💡 Cơ Chế Bảo Mật & Đồng Bộ Real-time</h5>
+                            <p style="font-size:0.8rem; color:#cbd5e1; line-height:1.6;">
+                                Mỗi đơn gọi món qua QR Order sẽ được xác thực StoreID tức thì và xuất hiện trực tiếp trên <strong>Màn hình Barista (KDS)</strong> và <strong>POS Thu ngân</strong> mà nhân viên không cần phải nhập tay lại.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================================= -->
+            <!-- TAB 4: MÀN HÌNH BARISTA (KDS)                                  -->
+            <!-- ============================================================= -->
+            <section class="tab-content" id="tab-barista">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+                    <div style="display:flex; gap:10px;">
+                        <button class="filter-btn active">Tất cả món chờ (5)</button>
+                        <button class="filter-btn">⏳ Chờ làm (3)</button>
+                        <button class="filter-btn">👨‍🍳 Đang pha (2)</button>
+                    </div>
+                    <button onclick="addSimulatedKdsOrder()" class="btn btn-primary" style="padding:8px 16px; font-size:0.85rem;">
+                        + Giả Lập Đơn Mới Vào Bar
+                    </button>
+                </div>
+
+                <div class="kds-columns" id="kds-cards-container">
+                    <!-- Column 1: Chờ tiếp nhận -->
+                    <div class="kds-col">
+                        <div class="kds-col-header">
+                            <h4 style="font-size:0.95rem; font-weight:800; color:#fbbf24;">⏳ Chờ Tiếp Nhận (3)</h4>
+                            <span class="status-pill pending">Pending</span>
+                        </div>
+                        <div id="kds-list-pending" style="display:flex; flex-direction:column; gap:12px;">
+                            <!-- Card item -->
+                            <div class="kds-card urgent">
+                                <div class="kds-card-head">
+                                    <strong style="font-size:0.95rem; color:#fff;">Bàn 01</strong>
+                                    <span class="kds-timer warning">08:42</span>
+                                </div>
+                                <div class="kds-items">
+                                    • <strong>2x Cà Phê Muối</strong> (Size M, 70% đường, 100% đá)<br>
+                                    • <strong>1x Trà Sen Vàng</strong> (Size L, 50% đường, ít đá)
+                                </div>
+                                <div style="font-size:0.75rem; color:#f87171; margin-bottom:10px;">⚠️ Khách đợi lâu (>8 phút)</div>
+                                <button onclick="advanceKds(this, 'brewing')" class="btn btn-primary" style="width:100%; padding:8px; font-size:0.8rem; justify-content:center;">
+                                    Nhận Pha Chế ➔
+                                </button>
+                            </div>
+
+                            <div class="kds-card">
+                                <div class="kds-card-head">
+                                    <strong style="font-size:0.95rem; color:#fff;">Mang Đi 04</strong>
+                                    <span class="kds-timer">02:15</span>
+                                </div>
+                                <div class="kds-items">
+                                    • <strong>1x Bạc Xỉu Sữa Dừa</strong> (Nóng, ít ngọt)
+                                </div>
+                                <button onclick="advanceKds(this, 'brewing')" class="btn btn-primary" style="width:100%; padding:8px; font-size:0.8rem; justify-content:center;">
+                                    Nhận Pha Chế ➔
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Column 2: Đang pha chế -->
+                    <div class="kds-col">
+                        <div class="kds-col-header">
+                            <h4 style="font-size:0.95rem; font-weight:800; color:#60a5fa;">👨‍🍳 Đang Pha Chế (2)</h4>
+                            <span class="status-pill brewing">In Progress</span>
+                        </div>
+                        <div id="kds-list-brewing" style="display:flex; flex-direction:column; gap:12px;">
+                            <div class="kds-card" style="border-color:rgba(59,130,246,0.4);">
+                                <div class="kds-card-head">
+                                    <strong style="font-size:0.95rem; color:#fff;">Bàn 05 (Sân Vườn)</strong>
+                                    <span class="kds-timer">03:30</span>
+                                </div>
+                                <div class="kds-items">
+                                    • <strong>2x Trà Đào Cam Sả</strong> (Size L, nhiều sả)
+                                </div>
+                                <button onclick="advanceKds(this, 'ready')" class="btn btn-secondary" style="width:100%; padding:8px; font-size:0.8rem; justify-content:center; background:#10b981; color:#000; font-weight:800;">
+                                    ✓ Hoàn Tất & Trả Món
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Column 3: Sẵn sàng phục vụ -->
+                    <div class="kds-col">
+                        <div class="kds-col-header">
+                            <h4 style="font-size:0.95rem; font-weight:800; color:#34d399;">✅ Đã Hoàn Tất (Trả Món)</h4>
+                            <span class="status-pill ready">Ready</span>
+                        </div>
+                        <div id="kds-list-ready" style="display:flex; flex-direction:column; gap:12px;">
+                            <div class="kds-card" style="opacity:0.75;">
+                                <div class="kds-card-head">
+                                    <strong style="font-size:0.95rem; color:#fff;">Bàn VIP 01</strong>
+                                    <span class="status-pill ready">Xong lúc 17:42</span>
+                                </div>
+                                <div class="kds-items">
+                                    • <strong>4x Cà phê Sữa Đá</strong><br>
+                                    • <strong>2x Tiramisu</strong>
+                                </div>
+                                <div style="font-size:0.75rem; color:#34d399; font-weight:700;">Đã mang ra bàn</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================================= -->
+            <!-- TAB 5: CRM KHÁCH QUEN (CRM)                                    -->
+            <!-- ============================================================= -->
+            <section class="tab-content" id="tab-crm">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+                    <div style="display:flex; gap:12px; flex:1; max-width:400px;">
+                        <input type="text" id="crm-search-input" oninput="filterCrmTable(this.value)" placeholder="Tìm theo tên hoặc số điện thoại..." style="width:100%; padding:10px 16px; background:var(--bg-surface); border:1px solid var(--border-subtle); color:#fff; border-radius:10px; font-size:0.85rem;">
+                    </div>
+                    <button onclick="openAddCustomerModal()" class="btn btn-primary" style="padding:10px 18px; font-size:0.85rem;">
+                        + Thêm Khách Hàng Mới
+                    </button>
+                </div>
+
+                <!-- Customer Table -->
+                <div class="data-table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Họ & Tên</th>
+                                <th>Số Điện Thoại</th>
+                                <th>Hạng Thành Viên</th>
+                                <th>Điểm Tích Lũy</th>
+                                <th>Tổng Chi Tiêu</th>
+                                <th>Lần Đến Gần Nhất</th>
+                                <th style="text-align:right;">Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="crm-table-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ============================================================= -->
+            <!-- TAB 6: BÁO CÁO DOANH THU (REPORTS)                             -->
+            <!-- ============================================================= -->
+            <section class="tab-content" id="tab-reports">
+                <div class="metrics-row" style="margin-bottom:28px;">
+                    <div class="stat-card">
+                        <span class="stat-label">Doanh Thu Tổng Hôm Nay</span>
+                        <div class="stat-value">8.450.000 <small>VNĐ</small></div>
+                        <span class="stat-trend positive">Đạt 105% chỉ tiêu ngày</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Doanh Thu Qua VietQR</span>
+                        <div class="stat-value">5.915.000 <small>VNĐ</small></div>
+                        <span class="metric-text">Chiếm 70% tổng doanh thu</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Doanh Thu Tiền Mặt</span>
+                        <div class="stat-value">2.535.000 <small>VNĐ</small></div>
+                        <span class="metric-text">Đã kiểm đếm cuối ca</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Giá Trị Trung Bình / Đơn</span>
+                        <div class="stat-value">103.000 <small>VNĐ/đơn</small></div>
+                        <span class="stat-trend positive">↑ 12% so với tháng trước</span>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); gap:24px;">
+                    <!-- Hourly Revenue Simulation Chart -->
+                    <div class="stat-card">
+                        <h4 style="font-size:1.05rem; font-weight:700; margin-bottom:16px;">Biểu Đồ Doanh Thu Theo Giờ</h4>
+                        <div style="display:flex; align-items:flex-end; gap:10px; height:180px; padding-top:20px; border-bottom:1px solid var(--border-subtle);">
+                            <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:6px;">
+                                <div style="width:100%; height:40px; background:rgba(245,158,11,0.3); border-radius:4px;"></div>
+                                <span style="font-size:0.7rem; color:#94a3b8;">08h</span>
+                            </div>
+                            <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:6px;">
+                                <div style="width:100%; height:95px; background:rgba(245,158,11,0.5); border-radius:4px;"></div>
+                                <span style="font-size:0.7rem; color:#94a3b8;">10h</span>
+                            </div>
+                            <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:6px;">
+                                <div style="width:100%; height:130px; background:var(--primary); border-radius:4px;"></div>
+                                <span style="font-size:0.7rem; color:#f59e0b; font-weight:700;">12h</span>
+                            </div>
+                            <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:6px;">
+                                <div style="width:100%; height:80px; background:rgba(245,158,11,0.4); border-radius:4px;"></div>
+                                <span style="font-size:0.7rem; color:#94a3b8;">14h</span>
+                            </div>
+                            <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:6px;">
+                                <div style="width:100%; height:160px; background:var(--primary); border-radius:4px; box-shadow:0 0 10px rgba(245,158,11,0.5);"></div>
+                                <span style="font-size:0.7rem; color:#f59e0b; font-weight:700;">16h</span>
+                            </div>
+                            <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:6px;">
+                                <div style="width:100%; height:110px; background:rgba(245,158,11,0.6); border-radius:4px;"></div>
+                                <span style="font-size:0.7rem; color:#94a3b8;">18h</span>
+                            </div>
+                        </div>
+                        <div style="margin-top:14px; font-size:0.78rem; color:#94a3b8;">
+                            🔥 Khung giờ cao điểm: <strong>12h - 13h</strong> và <strong>16h - 18h</strong>
+                        </div>
+                    </div>
+
+                    <!-- Top Best-sellers -->
+                    <div class="stat-card">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                            <h4 style="font-size:1.05rem; font-weight:700;">Top Món Bán Chạy (Best-Sellers)</h4>
+                            <button onclick="showToast('Đã xuất file báo cáo Excel thành công!', 'success')" class="btn btn-secondary" style="padding:6px 12px; font-size:0.75rem;">📥 Xuất Excel</button>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:12px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:8px; border-bottom:1px solid var(--border-subtle);">
+                                <div>
+                                    <div style="font-weight:700; font-size:0.88rem;">1. Cà Phê Muối Đặc Biệt</div>
+                                    <div style="font-size:0.72rem; color:#94a3b8;">48 ly đã bán</div>
+                                </div>
+                                <span style="font-weight:800; color:#fbbf24; font-family:monospace;">1.680.000 đ</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:8px; border-bottom:1px solid var(--border-subtle);">
+                                <div>
+                                    <div style="font-weight:700; font-size:0.88rem;">2. Cà Phê Sữa Đá Sài Gòn</div>
+                                    <div style="font-size:0.72rem; color:#94a3b8;">52 ly đã bán</div>
+                                </div>
+                                <span style="font-weight:800; color:#fbbf24; font-family:monospace;">1.508.000 đ</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:8px; border-bottom:1px solid var(--border-subtle);">
+                                <div>
+                                    <div style="font-weight:700; font-size:0.88rem;">3. Trà Sen Vàng Hạt Dẻ</div>
+                                    <div style="font-size:0.72rem; color:#94a3b8;">34 ly đã bán</div>
+                                </div>
+                                <span style="font-weight:800; color:#fbbf24; font-family:monospace;">1.530.000 đ</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- MODAL: THAO TÁC BÀN (Xem bill, Gộp bàn, Tách bàn)                  -->
+    <!-- ================================================================= -->
+    <div class="modal-overlay" id="modal-table-action">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div>
+                    <h3 style="font-size:1.15rem; font-weight:800;" id="modal-tbl-title">Chi Tiết Bàn 01</h3>
+                    <p style="font-size:0.75rem; color:#94a3b8;" id="modal-tbl-subtitle">Tầng 1 • Đang có khách</p>
+                </div>
+                <button onclick="closeTableModal()" style="background:none; border:none; color:#fff; font-size:1.2rem; cursor:pointer;">✕</button>
+            </div>
+            <div class="modal-body">
+                <div style="background:rgba(0,0,0,0.3); padding:14px; border-radius:10px; margin-bottom:16px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:0.85rem;">
+                        <span style="color:#94a3b8;">Hóa đơn hiện tại:</span>
+                        <strong style="color:#fbbf24; font-size:1.1rem; font-family:monospace;" id="modal-tbl-total">115.000 đ</strong>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#94a3b8;">
+                        <span>Thời gian ngồi:</span>
+                        <span id="modal-tbl-time">42 phút</span>
+                    </div>
+                </div>
+
+                <h5 style="font-size:0.85rem; font-weight:700; margin-bottom:10px; color:#fff;">Thao tác bàn:</h5>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <button onclick="triggerTableAction('gop')" class="btn btn-secondary" style="justify-content:center; padding:10px;">
+                        🔗 Gộp Bàn Này
+                    </button>
+                    <button onclick="triggerTableAction('tach')" class="btn btn-secondary" style="justify-content:center; padding:10px;">
+                        ✂️ Tách Bàn / Hóa Đơn
+                    </button>
+                    <button onclick="triggerTableAction('chuyen')" class="btn btn-secondary" style="justify-content:center; padding:10px;">
+                        🔄 Chuyển Sang Bàn Khác
+                    </button>
+                    <a href="pos.html" class="btn btn-primary" style="justify-content:center; padding:10px; text-decoration:none;">
+                        💳 Tính Tiền Tại POS
+                    </a>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeTableModal()" class="btn btn-secondary">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- MODAL: THÊM KHÁCH HÀNG CRM MỚI                                    -->
+    <!-- ================================================================= -->
+    <div class="modal-overlay" id="modal-add-customer">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 style="font-size:1.1rem; font-weight:800;">Thêm Khách Hàng Thân Thiết</h3>
+                <button onclick="closeAddCustomerModal()" style="background:none; border:none; color:#fff; font-size:1.2rem; cursor:pointer;">✕</button>
+            </div>
+            <form onsubmit="saveCustomer(event)" class="modal-body" style="display:flex; flex-direction:column; gap:14px;">
+                <div>
+                    <label style="font-size:0.8rem; color:#94a3b8; display:block; margin-bottom:4px;">Họ và Tên (*):</label>
+                    <input type="text" id="new-cust-name" required placeholder="Nguyễn Văn A" style="width:100%; padding:10px; background:var(--bg-surface-elevated); border:1px solid var(--border-subtle); color:#fff; border-radius:8px;">
+                </div>
+                <div>
+                    <label style="font-size:0.8rem; color:#94a3b8; display:block; margin-bottom:4px;">Số Điện Thoại (*):</label>
+                    <input type="tel" id="new-cust-phone" required placeholder="0901234567" style="width:100%; padding:10px; background:var(--bg-surface-elevated); border:1px solid var(--border-subtle); color:#fff; border-radius:8px;">
+                </div>
+                <div>
+                    <label style="font-size:0.8rem; color:#94a3b8; display:block; margin-bottom:4px;">Hạng Thẻ:</label>
+                    <select id="new-cust-tier" style="width:100%; padding:10px; background:var(--bg-surface-elevated); border:1px solid var(--border-subtle); color:#fff; border-radius:8px;">
+                        <option value="Đồng">Đồng (Tích 3%)</option>
+                        <option value="Bạc">Bạc (Giảm 5%)</option>
+                        <option value="Vàng">Vàng (Giảm 10%)</option>
+                        <option value="Kim Cương">Kim Cương (Giảm 15%)</option>
+                    </select>
+                </div>
+                <div class="modal-footer" style="padding:0; margin-top:10px;">
+                    <button type="button" onclick="closeAddCustomerModal()" class="btn btn-secondary">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Lưu Khách Hàng</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="app-toast">Thông báo</div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
