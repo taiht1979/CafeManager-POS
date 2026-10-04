@@ -414,7 +414,7 @@ app.get('/api/staff', async (req, res) => {
     if (db.isConfigured()) {
         try {
             const result = await db.query(`
-                SELECT UserID, StoreID, Username, FullName, Role, Phone, IsActive, CreatedAt 
+                SELECT UserID, StoreID, Username, FullName, Role, Phone, Pin, IsActive, CreatedAt 
                 FROM StaffUsers 
                 WHERE StoreID = $1 
                 ORDER BY UserID ASC

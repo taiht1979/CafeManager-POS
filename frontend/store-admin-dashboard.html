@@ -903,6 +903,23 @@
                     </div>
                 </div>
 
+                <!-- Trạng thái kết nối Neon DB thời gian thực -->
+                <div id="neon-conn-status-card" class="p-3 bg-slate-950/80 border border-slate-800 rounded-xl flex items-center justify-between gap-3 flex-wrap">
+                    <div class="flex items-center gap-2.5">
+                        <span id="neon-status-dot" class="w-3 h-3 rounded-full bg-amber-400 animate-pulse"></span>
+                        <div>
+                            <div class="text-xs font-bold text-white flex items-center gap-2">
+                                <span id="neon-status-title">Kiểm tra kết nối Neon Cloud...</span>
+                            </div>
+                            <span class="text-[10px] text-slate-400 block" id="neon-status-detail">Gửi tín hiệu kiểm tra tới /api/health</span>
+                        </div>
+                    </div>
+                    <button onclick="fetchLatestFromNeon()" id="btn-pull-neon" class="px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 font-bold text-[11px] flex items-center gap-1.5 transition-all">
+                        <span>📥</span>
+                        <span>Kéo dữ liệu từ Neon về App</span>
+                    </button>
+                </div>
+
                 <!-- 3 Bước thực hiện nhanh -->
                 <div class="p-3.5 bg-sky-950/30 border border-sky-500/30 rounded-xl text-sky-200">
                     <div class="font-bold mb-1.5 flex items-center gap-1.5 text-sky-300">
@@ -2177,6 +2194,39 @@
             if (btnLabel) btnLabel.textContent = 'SAO CHÉP MÃ SQL';
             if (copyStatus) copyStatus.textContent = 'Bấm nút sao chép để dán vào Neon Console';
 
+            // Kiểm tra trạng thái kết nối Neon qua /api/health
+            const dot = document.getElementById('neon-status-dot');
+            const title = document.getElementById('neon-status-title');
+            const detail = document.getElementById('neon-status-detail');
+            const btnPull = document.getElementById('btn-pull-neon');
+
+            if (dot && title && detail) {
+                dot.className = 'w-3 h-3 rounded-full bg-amber-400 animate-pulse';
+                title.textContent = 'Đang kiểm tra kết nối Neon Cloud...';
+                detail.textContent = 'Gửi yêu cầu tới /api/health';
+
+                fetch('/api/health')
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data && data.neonDatabase && data.neonDatabase.connected) {
+                            dot.className = 'w-3 h-3 rounded-full bg-emerald-400';
+                            title.textContent = '🟢 Neon PostgreSQL: ĐÃ KẾT NỐI TRỰC TIẾP';
+                            detail.textContent = `Database: ${data.neonDatabase.database || 'neondb'} (Thời gian máy chủ: ${data.neonDatabase.serverTime ? new Date(data.neonDatabase.serverTime).toLocaleTimeString('vi-VN') : 'OK'})`;
+                            if (btnPull) btnPull.classList.remove('opacity-50', 'pointer-events-none');
+                        } else {
+                            dot.className = 'w-3 h-3 rounded-full bg-rose-500';
+                            title.textContent = '🔴 Neon PostgreSQL: CHƯA KẾT NỐI (Đang chạy Mock Data)';
+                            detail.textContent = (data && data.neonDatabase && data.neonDatabase.message) || 'Vercel chưa nhận DATABASE_URL! Vui lòng kiểm tra Environment Variables trên Vercel.';
+                            if (btnPull) btnPull.classList.add('opacity-50', 'pointer-events-none');
+                        }
+                    })
+                    .catch(err => {
+                        dot.className = 'w-3 h-3 rounded-full bg-amber-500';
+                        title.textContent = '🟡 Chế độ Offline / Chưa cấu hình Backend API';
+                        detail.textContent = 'Dữ liệu đang lưu trữ cục bộ trong trình duyệt (localStorage)';
+                    });
+            }
+
             modal.classList.remove('hidden');
         }
 
@@ -2375,6 +2425,85 @@
             link.download = `sync_neon_data_${new Date().toISOString().slice(0, 10)}.sql`;
             link.click();
             showToast('✓ Đã tải xuống file sync_neon_data.sql!', 'success');
+        }
+
+        async function fetchLatestFromNeon() {
+            showToast('⏳ Đang kết nối và kéo dữ liệu từ Neon DB...', 'info');
+            try {
+                // Kiểm tra trạng thái API & kết nối Neon
+                const healthRes = await fetch('/api/health');
+                const health = await healthRes.json();
+                if (!health.neonDatabase || !health.neonDatabase.connected) {
+                    showToast('⚠️ Vercel chưa kết nối với Neon DB thực tế! Kiểm tra biến DATABASE_URL trên Vercel Settings.', 'warning');
+                    return;
+                }
+
+                let syncedCount = 0;
+
+                // 1. Kéo danh sách nhân sự (StaffUsers)
+                const staffRes = await fetch('/api/staff');
+                const staffData = await staffRes.json();
+                if (staffData.source === 'Neon DB' && Array.isArray(staffData.data) && staffData.data.length > 0) {
+                    storeStaff = staffData.data.map(s => ({
+                        id: s.UserID,
+                        name: s.FullName,
+                        username: s.Username,
+                        role: s.Role === 'StoreOwner' ? 'Manager' : s.Role,
+                        phone: s.Phone || '',
+                        pin: s.Pin || '1234',
+                        status: s.IsActive ? 'active' : 'inactive'
+                    }));
+                    localStorage.setItem('admin_store_staff', JSON.stringify(storeStaff));
+                    renderStaff();
+                    syncedCount += storeStaff.length;
+                }
+
+                // 2. Kéo danh sách bàn (Tables)
+                const tableRes = await fetch('/api/tables');
+                const tableData = await tableRes.json();
+                if (tableData.source === 'Neon DB' && Array.isArray(tableData.data) && tableData.data.length > 0) {
+                    storeTables = tableData.data.map(t => ({
+                        id: t.TableID,
+                        name: t.TableName,
+                        area: t.AreaName,
+                        capacity: t.Capacity,
+                        status: (t.Status || 'Available').toLowerCase()
+                    }));
+                    localStorage.setItem('admin_store_tables', JSON.stringify(storeTables));
+                    renderTables();
+                }
+
+                // 3. Kéo thực đơn món (MenuItems)
+                const menuRes = await fetch('/api/menu');
+                const menuData = await menuRes.json();
+                if (menuData.source === 'Neon DB' && Array.isArray(menuData.data) && menuData.data.length > 0) {
+                    storeMenu = menuData.data.map(m => {
+                        let allowedTop = [];
+                        try {
+                            allowedTop = typeof m.AvailableToppings === 'string' ? JSON.parse(m.AvailableToppings || '[]') : (m.AvailableToppings || []);
+                        } catch (e) {}
+                        return {
+                            id: m.ItemID,
+                            name: m.ItemName,
+                            cat: m.CategoryName,
+                            sku: m.SKU,
+                            price: parseFloat(m.BasePrice),
+                            img: m.ImageUrl || '☕',
+                            desc: m.Description || '',
+                            available: m.IsAvailable !== false,
+                            allowTopping: m.AllowsTopping || false,
+                            allowedToppings: allowedTop
+                        };
+                    });
+                    localStorage.setItem('admin_store_menu', JSON.stringify(storeMenu));
+                    renderMenu();
+                }
+
+                openExportSqlModal(); // Cập nhật lại số liệu thống kê trong modal
+                showToast(`✓ Đã đồng bộ thành công dữ liệu mới nhất từ Neon PostgreSQL về App!`, 'success');
+            } catch (err) {
+                showToast('❌ Không thể kéo dữ liệu từ Neon: ' + err.message, 'warning');
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
