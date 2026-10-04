@@ -136,6 +136,17 @@
                 <span>📈</span>
                 <span>Báo Cáo Doanh Thu</span>
             </button>
+
+            <!-- Nút Đồng Bộ / Xuất Dữ Liệu Lên Neon DB -->
+            <div class="pt-2 border-t border-slate-800/80 my-1.5">
+                <button onclick="openExportSqlModal()" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-gradient-to-r from-sky-500/15 via-emerald-500/15 to-transparent border border-sky-500/40 text-sky-300 hover:text-white hover:border-sky-400 transition-all font-bold text-xs shadow-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="text-base">📤</span>
+                        <span>Đẩy Dữ Liệu Lên Neon</span>
+                    </div>
+                    <span class="text-[9px] bg-sky-500/25 text-sky-300 border border-sky-500/40 px-1.5 py-0.5 rounded font-mono font-black">SQL</span>
+                </button>
+            </div>
         </nav>
 
         <!-- Quick Switcher to Other Roles -->
@@ -846,6 +857,88 @@
                 <button onclick="confirmVoidInvoiceAdmin()" class="py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-black shadow-md">
                     🗑️ HỦY HÓA ĐƠN
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Xuất Dữ Liệu Đồng Bộ Lên Neon PostgreSQL -->
+    <div id="modal-export-neon" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-xl">
+                        📤
+                    </div>
+                    <div>
+                        <h3 class="text-base font-black text-white flex items-center gap-2">
+                            <span>Đẩy Dữ Liệu Local Lên Neon PostgreSQL</span>
+                            <span class="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-mono font-bold">1-Click Sync</span>
+                        </h3>
+                        <p class="text-xs text-slate-400">Trích xuất Bàn, Thực đơn món (kèm ảnh & topping), và Nhân viên thành mã SQL chuẩn Neon</p>
+                    </div>
+                </div>
+                <button onclick="closeExportSqlModal()" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-base">✕</button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6 overflow-y-auto space-y-4 text-xs">
+                <!-- Thống kê dữ liệu sẽ đẩy -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div class="p-3 bg-slate-800/60 rounded-xl border border-slate-700/60">
+                        <span class="text-slate-400 block text-[10px]">Danh Sách Bàn</span>
+                        <span class="text-base font-black text-amber-400" id="sync-stat-tables">0 bàn</span>
+                    </div>
+                    <div class="p-3 bg-slate-800/60 rounded-xl border border-slate-700/60">
+                        <span class="text-slate-400 block text-[10px]">Món Thực Đơn</span>
+                        <span class="text-base font-black text-sky-400" id="sync-stat-menu">0 món</span>
+                    </div>
+                    <div class="p-3 bg-slate-800/60 rounded-xl border border-slate-700/60">
+                        <span class="text-slate-400 block text-[10px]">Topping Áp Dụng</span>
+                        <span class="text-base font-black text-purple-400" id="sync-stat-toppings">0 loại</span>
+                    </div>
+                    <div class="p-3 bg-slate-800/60 rounded-xl border border-slate-700/60">
+                        <span class="text-slate-400 block text-[10px]">Nhân Viên & PIN</span>
+                        <span class="text-base font-black text-emerald-400" id="sync-stat-staff">0 người</span>
+                    </div>
+                </div>
+
+                <!-- 3 Bước thực hiện nhanh -->
+                <div class="p-3.5 bg-sky-950/30 border border-sky-500/30 rounded-xl text-sky-200">
+                    <div class="font-bold mb-1.5 flex items-center gap-1.5 text-sky-300">
+                        <span>⚡</span>
+                        <span>3 Bước Đơn Giản Để Đưa Dữ Liệu Lên Neon (Chỉ mất 10 giây):</span>
+                    </div>
+                    <ol class="list-decimal list-inside space-y-1 text-[11px] text-slate-300">
+                        <li>Bấm nút <strong>[📋 SAO CHÉP MÃ SQL]</strong> ở góc dưới.</li>
+                        <li>Mở <a href="https://console.neon.tech" target="_blank" class="underline text-sky-400 font-bold hover:text-sky-300">Neon Console (console.neon.tech)</a> ➔ Chọn Project ➔ Vào mục <strong>SQL Editor</strong>.</li>
+                        <li>Dán mã (<strong>Ctrl + V</strong>) và bấm nút xanh <strong>Run</strong>! Dữ liệu sẽ lập tức được cập nhật mà không sợ lỗi trùng lặp.</li>
+                    </ol>
+                </div>
+
+                <!-- SQL Output Box -->
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="text-slate-400 font-bold text-[11px]">Mã SQL Tự Động Sinh (PostgreSQL / Neon):</label>
+                        <span class="text-[10px] text-slate-500 font-mono">ON CONFLICT DO UPDATE (Safe & Idempotent)</span>
+                    </div>
+                    <textarea id="export-sql-content" readonly class="w-full h-56 bg-slate-950 font-mono text-[11px] text-emerald-400 p-3 rounded-xl border border-slate-700 select-all leading-relaxed focus:outline-none focus:border-sky-500"></textarea>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-6 py-3.5 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between flex-wrap gap-2">
+                <span class="text-[11px] text-slate-400" id="copy-status-text">Bấm nút sao chép để dán vào Neon Console</span>
+                <div class="flex items-center gap-2">
+                    <button onclick="downloadGeneratedSqlFile()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs flex items-center gap-1.5 transition-all">
+                        <span>💾</span>
+                        <span>Tải File .SQL</span>
+                    </button>
+                    <button onclick="copyGeneratedSql()" class="px-5 py-2 rounded-xl bg-gradient-to-r from-sky-500 to-emerald-500 hover:from-sky-400 hover:to-emerald-400 text-slate-950 font-black text-xs shadow-lg shadow-sky-500/20 flex items-center gap-1.5 transition-all">
+                        <span>📋</span>
+                        <span id="btn-copy-label">SAO CHÉP MÃ SQL</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -2049,6 +2142,239 @@
             document.getElementById('toast-msg').textContent = msg;
             toast.style.transform = 'translateY(0)';
             setTimeout(() => { toast.style.transform = 'translateY(-150%)'; }, 3200);
+        }
+
+        // =========================================================================
+        // NEON POSTGRESQL DATA EXPORT & CLOUD SYNC LOGIC
+        // =========================================================================
+        function openExportSqlModal() {
+            const modal = document.getElementById('modal-export-neon');
+            if (!modal) return;
+
+            // Tự động sinh mã SQL từ dữ liệu localStorage hiện tại
+            const sql = generateNeonSyncSql();
+            const textarea = document.getElementById('export-sql-content');
+            if (textarea) textarea.value = sql;
+
+            // Thống kê số lượng bản ghi
+            const tables = JSON.parse(localStorage.getItem('admin_store_tables') || '[]');
+            const menu = JSON.parse(localStorage.getItem('admin_store_menu') || '[]');
+            const toppings = JSON.parse(localStorage.getItem('admin_store_toppings') || '[]');
+            const staff = JSON.parse(localStorage.getItem('admin_store_staff') || '[]');
+
+            const elTables = document.getElementById('sync-stat-tables');
+            const elMenu = document.getElementById('sync-stat-menu');
+            const elToppings = document.getElementById('sync-stat-toppings');
+            const elStaff = document.getElementById('sync-stat-staff');
+
+            if (elTables) elTables.textContent = `${tables.length} bàn`;
+            if (elMenu) elMenu.textContent = `${menu.length} món`;
+            if (elToppings) elToppings.textContent = `${toppings.length} loại`;
+            if (elStaff) elStaff.textContent = `${staff.length} người`;
+
+            const btnLabel = document.getElementById('btn-copy-label');
+            const copyStatus = document.getElementById('copy-status-text');
+            if (btnLabel) btnLabel.textContent = 'SAO CHÉP MÃ SQL';
+            if (copyStatus) copyStatus.textContent = 'Bấm nút sao chép để dán vào Neon Console';
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeExportSqlModal() {
+            const modal = document.getElementById('modal-export-neon');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function escapeSqlStr(str) {
+            if (str === null || str === undefined) return '';
+            return String(str).replace(/'/g, "''");
+        }
+
+        function generateNeonSyncSql() {
+            const tables = JSON.parse(localStorage.getItem('admin_store_tables') || '[]');
+            const menu = JSON.parse(localStorage.getItem('admin_store_menu') || '[]');
+            const toppings = JSON.parse(localStorage.getItem('admin_store_toppings') || '[]');
+            const staff = JSON.parse(localStorage.getItem('admin_store_staff') || '[]');
+            const storeInfo = JSON.parse(localStorage.getItem('store_info_config') || '{}');
+            const qrConfig = JSON.parse(localStorage.getItem('store_vietqr_config') || '{}');
+
+            const nowStr = new Date().toLocaleString('vi-VN');
+            let sql = `-- =============================================================================\n`;
+            sql += `-- CAFEMANAGER POS - ĐỒNG BỘ DỮ LIỆU LOCAL LÊN NEON POSTGRESQL\n`;
+            sql += `-- Thời điểm xuất dữ liệu: ${nowStr}\n`;
+            sql += `-- Sử dụng cú pháp ON CONFLICT an toàn: cập nhật dữ liệu mới nhất, không báo lỗi trùng\n`;
+            sql += `-- =============================================================================\n\n`;
+
+            // 0. Bổ sung các cột schema nếu chưa có (Migration an toàn)
+            sql += `-- BƯỚC 0: ĐẢM BẢO CẤU TRÚC BẢNG ĐẦY ĐỦ CÁC TRƯỜNG MỚI\n`;
+            sql += `ALTER TABLE StaffUsers ADD COLUMN IF NOT EXISTS Pin VARCHAR(10) DEFAULT '1234';\n`;
+            sql += `ALTER TABLE StaffUsers ADD COLUMN IF NOT EXISTS Password VARCHAR(255) DEFAULT '1234';\n`;
+            sql += `ALTER TABLE StaffUsers ALTER COLUMN Email DROP NOT NULL;\n`;
+            sql += `ALTER TABLE StaffUsers DROP CONSTRAINT IF EXISTS staffusers_role_check;\n`;
+            sql += `ALTER TABLE StaffUsers DROP CONSTRAINT IF EXISTS StaffUsers_Role_check;\n`;
+            sql += `ALTER TABLE StaffUsers ADD CONSTRAINT staffusers_role_check CHECK (Role IN ('SuperAdmin', 'StoreOwner', 'StoreManager', 'Manager', 'Cashier', 'Waiter', 'Barista'));\n\n`;
+
+            sql += `ALTER TABLE MenuItems ALTER COLUMN ImageUrl TYPE TEXT;\n`;
+            sql += `ALTER TABLE MenuItems ADD COLUMN IF NOT EXISTS AllowsTopping BOOLEAN DEFAULT FALSE;\n`;
+            sql += `ALTER TABLE MenuItems ADD COLUMN IF NOT EXISTS AvailableToppings TEXT DEFAULT '[]';\n\n`;
+
+            sql += `CREATE TABLE IF NOT EXISTS Toppings (\n`;
+            sql += `    ToppingID SERIAL PRIMARY KEY,\n`;
+            sql += `    StoreID INT NOT NULL REFERENCES Stores(StoreID) ON DELETE CASCADE,\n`;
+            sql += `    ToppingName VARCHAR(100) NOT NULL,\n`;
+            sql += `    Price NUMERIC(12, 2) NOT NULL DEFAULT 5000,\n`;
+            sql += `    IsAvailable BOOLEAN DEFAULT TRUE,\n`;
+            sql += `    CreatedAt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,\n`;
+            sql += `    CONSTRAINT UQ_Toppings_Store_Name UNIQUE (StoreID, ToppingName)\n`;
+            sql += `);\n\n`;
+
+            // 1. Cập nhật thông tin Store & VietQR
+            const storeName = escapeSqlStr(storeInfo.name || 'Aroma Coffee Roastery');
+            const address = escapeSqlStr(storeInfo.address || '123 Đường Hoa Lan, Q. Phú Nhuận, TP.HCM');
+            const phone = escapeSqlStr(storeInfo.phone || '0901234567');
+            const bankCode = escapeSqlStr(qrConfig.bankCode || 'MB');
+            const bankAcc = escapeSqlStr(qrConfig.bankAcc || '0901234567');
+            const bankName = escapeSqlStr(qrConfig.bankName || 'LE HUU NGHIA');
+
+            sql += `-- BƯỚC 1: CẬP NHẬT CẤU HÌNH THƯƠNG HIỆU & TÀI KHOẢN VIETQR\n`;
+            sql += `UPDATE Stores SET\n`;
+            sql += `    StoreName = '${storeName}',\n`;
+            sql += `    Address = '${address}',\n`;
+            sql += `    Phone = '${phone}',\n`;
+            sql += `    BankCode = '${bankCode}',\n`;
+            sql += `    BankAccountNumber = '${bankAcc}',\n`;
+            sql += `    BankAccountName = '${bankName}',\n`;
+            sql += `    UpdatedAt = CURRENT_TIMESTAMP\n`;
+            sql += `WHERE StoreID = 1;\n\n`;
+
+            // 2. Đồng bộ Tables
+            if (tables.length > 0) {
+                sql += `-- BƯỚC 2: ĐỒNG BỘ DANH SÁCH BÀN (${tables.length} bàn)\n`;
+                sql += `INSERT INTO Tables (StoreID, TableName, AreaName, Capacity, Status, QRToken)\nVALUES\n`;
+                const tableRows = tables.map((t, idx) => {
+                    const tName = escapeSqlStr(t.name || `Bàn ${idx + 1}`);
+                    const area = escapeSqlStr(t.area || 'Tầng 1');
+                    const cap = parseInt(t.capacity) || 4;
+                    const status = (t.status === 'maintenance' || t.status === 'Maintenance') ? 'Maintenance' : 'Available';
+                    const qrToken = escapeSqlStr(`tok-qr-s1-tbl-${idx + 1}-${tName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()}`);
+                    return `    (1, '${tName}', '${area}', ${cap}, '${status}', '${qrToken}')`;
+                });
+                sql += tableRows.join(',\n') + '\n';
+                sql += `ON CONFLICT (StoreID, TableName) DO UPDATE SET\n`;
+                sql += `    AreaName = EXCLUDED.AreaName,\n`;
+                sql += `    Capacity = EXCLUDED.Capacity,\n`;
+                sql += `    Status = EXCLUDED.Status,\n`;
+                sql += `    UpdatedAt = CURRENT_TIMESTAMP;\n\n`;
+            }
+
+            // 3. Đồng bộ Toppings
+            if (toppings.length > 0) {
+                sql += `-- BƯỚC 3: ĐỒNG BỘ DANH SÁCH TOPPING (${toppings.length} loại)\n`;
+                sql += `INSERT INTO Toppings (StoreID, ToppingName, Price, IsAvailable)\nVALUES\n`;
+                const topRows = toppings.map(top => {
+                    const topName = escapeSqlStr(top.name);
+                    const price = parseFloat(top.price) || 0;
+                    return `    (1, '${topName}', ${price}, TRUE)`;
+                });
+                sql += topRows.join(',\n') + '\n';
+                sql += `ON CONFLICT (StoreID, ToppingName) DO UPDATE SET\n`;
+                sql += `    Price = EXCLUDED.Price,\n`;
+                sql += `    IsAvailable = EXCLUDED.IsAvailable;\n\n`;
+            }
+
+            // 4. Đồng bộ MenuItems
+            if (menu.length > 0) {
+                sql += `-- BƯỚC 4: ĐỒNG BỘ THỰC ĐƠN MÓN & TOPPING ÁP DỤNG (${menu.length} món)\n`;
+                sql += `INSERT INTO MenuItems (StoreID, SKU, ItemName, CategoryName, BasePrice, ImageUrl, Description, AllowsTopping, AvailableToppings, IsAvailable)\nVALUES\n`;
+                const menuRows = menu.map((m, idx) => {
+                    const sku = escapeSqlStr(m.sku || `ITEM-${idx + 1}`);
+                    const name = escapeSqlStr(m.name);
+                    const cat = escapeSqlStr(m.cat || 'Khác');
+                    const price = parseFloat(m.price) || 0;
+                    const img = escapeSqlStr(m.img || '');
+                    const desc = escapeSqlStr(m.desc || '');
+                    const allowTop = m.allowTopping ? 'TRUE' : 'FALSE';
+                    const allowedTopJson = escapeSqlStr(JSON.stringify(m.allowedToppings || []));
+                    const isAvail = m.available !== false ? 'TRUE' : 'FALSE';
+                    return `    (1, '${sku}', '${name}', '${cat}', ${price}, '${img}', '${desc}', ${allowTop}, '${allowedTopJson}', ${isAvail})`;
+                });
+                sql += menuRows.join(',\n') + '\n';
+                sql += `ON CONFLICT (StoreID, SKU) DO UPDATE SET\n`;
+                sql += `    ItemName = EXCLUDED.ItemName,\n`;
+                sql += `    CategoryName = EXCLUDED.CategoryName,\n`;
+                sql += `    BasePrice = EXCLUDED.BasePrice,\n`;
+                sql += `    ImageUrl = EXCLUDED.ImageUrl,\n`;
+                sql += `    Description = EXCLUDED.Description,\n`;
+                sql += `    AllowsTopping = EXCLUDED.AllowsTopping,\n`;
+                sql += `    AvailableToppings = EXCLUDED.AvailableToppings,\n`;
+                sql += `    IsAvailable = EXCLUDED.IsAvailable,\n`;
+                sql += `    UpdatedAt = CURRENT_TIMESTAMP;\n\n`;
+            }
+
+            // 5. Đồng bộ StaffUsers
+            if (staff.length > 0) {
+                sql += `-- BƯỚC 5: ĐỒNG BỘ NHÂN VIÊN, MÃ PIN & MẬT KHẨU (${staff.length} tài khoản)\n`;
+                sql += `INSERT INTO StaffUsers (StoreID, Username, FullName, Role, Phone, Pin, Password, IsActive)\nVALUES\n`;
+                const staffRows = staff.map(s => {
+                    const username = escapeSqlStr(s.username || `user_${s.id}`);
+                    const fullName = escapeSqlStr(s.name || s.fullName || username);
+                    let role = s.role || 'Cashier';
+                    if (role === 'StoreOwner') role = 'StoreOwner';
+                    const phone = escapeSqlStr(s.phone || '');
+                    const pin = escapeSqlStr(s.pin || '1234');
+                    const pass = escapeSqlStr(s.password || (pin + '1234!'));
+                    return `    (1, '${username}', '${fullName}', '${role}', '${phone}', '${pin}', '${pass}', TRUE)`;
+                });
+                sql += staffRows.join(',\n') + '\n';
+                sql += `ON CONFLICT (StoreID, Username) DO UPDATE SET\n`;
+                sql += `    FullName = EXCLUDED.FullName,\n`;
+                sql += `    Role = EXCLUDED.Role,\n`;
+                sql += `    Phone = EXCLUDED.Phone,\n`;
+                sql += `    Pin = EXCLUDED.Pin,\n`;
+                sql += `    Password = EXCLUDED.Password,\n`;
+                sql += `    IsActive = EXCLUDED.IsActive,\n`;
+                sql += `    UpdatedAt = CURRENT_TIMESTAMP;\n\n`;
+            }
+
+            // 6. Tắt RLS để truy vấn thuận lợi
+            sql += `-- BƯỚC 6: PHÂN QUYỀN TRUY VẤN VÀ HOÀN TẤT\n`;
+            sql += `ALTER TABLE Tables DISABLE ROW LEVEL SECURITY;\n`;
+            sql += `ALTER TABLE MenuItems DISABLE ROW LEVEL SECURITY;\n`;
+            sql += `ALTER TABLE StaffUsers DISABLE ROW LEVEL SECURITY;\n`;
+            sql += `ALTER TABLE Toppings DISABLE ROW LEVEL SECURITY;\n\n`;
+            sql += `SELECT '✓ ĐỒNG BỘ DỮ LIỆU LOCAL LÊN NEON THÀNH CÔNG!' AS KetQua;\n`;
+
+            return sql;
+        }
+
+        function copyGeneratedSql() {
+            const textarea = document.getElementById('export-sql-content');
+            if (!textarea) return;
+            textarea.select();
+            navigator.clipboard.writeText(textarea.value).then(() => {
+                const btnLabel = document.getElementById('btn-copy-label');
+                const copyStatus = document.getElementById('copy-status-text');
+                if (btnLabel) btnLabel.textContent = '✓ ĐÃ SAO CHÉP!';
+                if (copyStatus) copyStatus.textContent = '✓ Đã chép mã SQL vào bộ nhớ tạm! Giờ hãy mở Neon SQL Editor và dán (Ctrl+V) vào.';
+                showToast('✓ Đã sao chép mã SQL đồng bộ! Mở Neon SQL Editor và dán vào.', 'success');
+                setTimeout(() => {
+                    if (btnLabel) btnLabel.textContent = 'SAO CHÉP MÃ SQL';
+                }, 3000);
+            }).catch(err => {
+                showToast('Vui lòng chọn tất cả trong ô mã và nhấn Ctrl+C để sao chép', 'warning');
+            });
+        }
+
+        function downloadGeneratedSqlFile() {
+            const textarea = document.getElementById('export-sql-content');
+            if (!textarea) return;
+            const sql = textarea.value;
+            const blob = new Blob([sql], { type: 'text/sql;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `sync_neon_data_${new Date().toISOString().slice(0, 10)}.sql`;
+            link.click();
+            showToast('✓ Đã tải xuống file sync_neon_data.sql!', 'success');
         }
 
         document.addEventListener('DOMContentLoaded', () => {
