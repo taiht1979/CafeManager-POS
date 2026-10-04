@@ -74,9 +74,32 @@ app.post('/api/auth/login', async (req, res) => {
 
     let user = null;
 
+    if (db.isConfigured()) {
+        try {
+            if (cleanPin) {
+                const result = await db.query('SELECT * FROM StaffUsers WHERE Pin = $1 AND IsActive = TRUE LIMIT 1', [cleanPin]);
+                if (result.rows.length > 0) user = result.rows[0];
+            } else if (loginUser) {
+                const result = await db.query('SELECT * FROM StaffUsers WHERE (LOWER(Username) = $1 OR Phone = $1) AND IsActive = TRUE LIMIT 1', [loginUser]);
+                if (result.rows.length > 0) user = result.rows[0];
+            }
+        } catch (e) {
+            console.warn('Lỗi kiểm tra StaffUsers trên Neon DB:', e.message);
+        }
+    }
+
+    if (!user) {
+        if (cleanPin) {
+            user = mockStaff.find(s => s.Pin === cleanPin && s.IsActive !== false);
+        } else if (loginUser) {
+            user = mockStaff.find(s => 
+                (s.Username.toLowerCase() === loginUser || s.Phone === loginUser) && 
+                s.IsActive !== false
+            );
+        }
+    }
+
     if (cleanPin) {
-        // Đăng nhập bằng mã PIN
-        user = mockStaff.find(s => s.Pin === cleanPin && s.IsActive !== false);
         if (!user) {
             return res.status(401).json({ 
                 success: false, 
@@ -84,12 +107,6 @@ app.post('/api/auth/login', async (req, res) => {
             });
         }
     } else if (loginUser) {
-        // Đăng nhập bằng Username & Mật khẩu
-        user = mockStaff.find(s => 
-            (s.Username.toLowerCase() === loginUser || s.Phone === loginUser) && 
-            s.IsActive !== false
-        );
-
         if (!user) {
             return res.status(401).json({ 
                 success: false, 
@@ -98,7 +115,8 @@ app.post('/api/auth/login', async (req, res) => {
         }
 
         // KIỂM TRA MẬT KHẨU CHẶT CHẼ
-        if (!password || password !== user.Password) {
+        const validPass = user.Password || user.PasswordHash || user.Pin;
+        if (!password || (password !== user.Password && password !== validPass && password !== user.Pin)) {
             return res.status(401).json({ 
                 success: false, 
                 error: 'Mật khẩu không chính xác! Vui lòng kiểm tra lại.' 
@@ -150,7 +168,20 @@ app.post('/api/auth/pin', async (req, res) => {
         return res.status(400).json({ success: false, error: 'Mã PIN phải gồm đúng 4 chữ số!' });
     }
 
-    const user = mockStaff.find(s => s.Pin === cleanPin && s.IsActive !== false);
+    let user = null;
+    if (db.isConfigured()) {
+        try {
+            const result = await db.query('SELECT * FROM StaffUsers WHERE Pin = $1 AND IsActive = TRUE LIMIT 1', [cleanPin]);
+            if (result.rows.length > 0) user = result.rows[0];
+        } catch (e) {
+            console.warn('Lỗi kiểm tra mã PIN trên Neon DB:', e.message);
+        }
+    }
+
+    if (!user) {
+        user = mockStaff.find(s => s.Pin === cleanPin && s.IsActive !== false);
+    }
+
     if (!user) {
         return res.status(401).json({
             success: false,

@@ -82,22 +82,23 @@ CREATE TABLE IF NOT EXISTS StaffUsers (
     StoreID INT NULL REFERENCES Stores(StoreID) ON DELETE CASCADE,
     
     Username VARCHAR(50) NOT NULL,
-    Email VARCHAR(100) NOT NULL,
-    PasswordHash VARCHAR(255) NOT NULL,
+    Email VARCHAR(100) NULL,
+    Password VARCHAR(255) DEFAULT '1234',
+    PasswordHash VARCHAR(255) NULL,
     FullName VARCHAR(100) NOT NULL,
     Phone VARCHAR(20),
+    Pin VARCHAR(10) DEFAULT '1234',
     
     Role VARCHAR(30) NOT NULL CHECK (
-        Role IN ('SuperAdmin', 'StoreOwner', 'StoreManager', 'Cashier', 'Barista')
+        Role IN ('SuperAdmin', 'StoreOwner', 'StoreManager', 'Manager', 'Cashier', 'Waiter', 'Barista')
     ),
     IsActive BOOLEAN DEFAULT TRUE,
     LastLoginAt TIMESTAMP WITH TIME ZONE,
     CreatedAt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     UpdatedAt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     
-    -- RÀNG BUỘC CÔ LẬP: Username và Email là duy nhất trong phạm vi từng quán
-    CONSTRAINT UQ_StaffUsers_Store_Username UNIQUE (StoreID, Username),
-    CONSTRAINT UQ_StaffUsers_Store_Email UNIQUE (StoreID, Email)
+    -- RÀNG BUỘC CÔ LẬP: Username là duy nhất trong phạm vi từng quán
+    CONSTRAINT UQ_StaffUsers_Store_Username UNIQUE (StoreID, Username)
 );
 
 CREATE INDEX idx_StaffUsers_Store_Role ON StaffUsers(StoreID, Role);
@@ -146,11 +147,13 @@ CREATE TABLE IF NOT EXISTS MenuItems (
     SKU VARCHAR(50) NOT NULL,                     -- Mã món nội bộ (có thể trùng giữa các Store khác nhau)
     BasePrice NUMERIC(12, 2) NOT NULL CHECK (BasePrice >= 0),
     CostPrice NUMERIC(12, 2) DEFAULT 0,           -- Giá vốn phục vụ tính lợi nhuận
-    ImageUrl VARCHAR(255),
+    ImageUrl TEXT,                                -- URL ảnh hoặc Base64 nén (<35KB)
     Description TEXT,
     
     AllowsSizeChange BOOLEAN DEFAULT TRUE,
     AllowsSugarIce BOOLEAN DEFAULT TRUE,
+    AllowsTopping BOOLEAN DEFAULT FALSE,          -- Cho phép hiển thị chọn topping
+    AvailableToppings TEXT DEFAULT '[]',          -- Danh sách topping áp dụng cho món (JSON mảng)
     IsAvailable BOOLEAN DEFAULT TRUE,
     
     CreatedAt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -161,6 +164,19 @@ CREATE TABLE IF NOT EXISTS MenuItems (
 );
 
 CREATE INDEX idx_MenuItems_Store_Cat ON MenuItems(StoreID, CategoryName, IsAvailable);
+
+-- =============================================================================
+-- 5.1. BẢNG TOPPING QUÁN (Toppings) - Gắn StoreID
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS Toppings (
+    ToppingID SERIAL PRIMARY KEY,
+    StoreID INT NOT NULL REFERENCES Stores(StoreID) ON DELETE CASCADE,
+    ToppingName VARCHAR(100) NOT NULL,
+    Price NUMERIC(12, 2) NOT NULL DEFAULT 5000,
+    IsAvailable BOOLEAN DEFAULT TRUE,
+    CreatedAt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT UQ_Toppings_Store_Name UNIQUE (StoreID, ToppingName)
+);
 
 -- =============================================================================
 -- 6. BẢNG KHÁCH HÀNG CRM (Customers) - Gắn StoreID
@@ -368,12 +384,13 @@ VALUES
 (1, 'STORE-HCM-01', 'Aroma Coffee Roastery', 'aroma-roastery', 3, CURRENT_TIMESTAMP + INTERVAL '1 year',  'Active', '0901112222', '120 Nguyễn Huệ, Quận 1, TP.HCM', 'MB',  '99998888',     'AROMA COFFEE ROASTERY'),
 (2, 'STORE-HN-02',  'La Vie En Rose Tea',     'lavie-rose',     2, CURRENT_TIMESTAMP + INTERVAL '6 months', 'Active', '0903334444', '45 Tràng Tiền, Hoàn Kiếm, HN',    'VCB', '001100223344', 'LA VIE EN ROSE CO');
 
--- 3. Khởi tạo Tài khoản Nhân sự (StaffUsers)
-INSERT INTO StaffUsers (UserID, StoreID, Username, Email, PasswordHash, FullName, Role) VALUES
-(1, NULL, 'superadmin',    'saas.admin@cafemanager.io', '$2a$12$MockHashSuperAdmin', 'Root SaaS Administrator', 'SuperAdmin'),
-(2, 1,    'aroma_owner',   'owner@aromacoffee.vn',      '$2a$12$MockHashAromaOwner', 'Lê Hữu Nghĩa (Chủ Quán Aroma)', 'StoreOwner'),
-(3, 1,    'aroma_cashier', 'cashier@aromacoffee.vn',    '$2a$12$MockHashAromaStaff', 'Trần Thu Ngân (Aroma)',       'Cashier'),
-(4, 2,    'rose_owner',    'owner@lavierose.vn',        '$2a$12$MockHashRoseOwner',  'Phạm Bích Ngọc (Chủ Quán Rose)', 'StoreOwner');
+-- 3. Khởi tạo Tài khoản Nhân sự Chuẩn (StaffUsers)
+INSERT INTO StaffUsers (UserID, StoreID, Username, Email, Password, Pin, FullName, Role, Phone) VALUES
+(1, NULL, 'superadmin', 'saas.admin@cafemanager.io', 'SuperAdmin@2026!', '9999', 'Root SaaS Administrator', 'SuperAdmin', '0900000999'),
+(2, 1,    'manager',    'owner@aromacoffee.vn',      'Manager@2026!',    '8888', 'Lê Hữu Nghĩa (Chủ Quán Aroma)', 'StoreOwner', '0901112222'),
+(3, 1,    'cashier',    'cashier@aromacoffee.vn',    'Cashier@1234!',    '1234', 'Trần Thu Ngân (Aroma POS)',       'Cashier',    '0908888777'),
+(4, 1,    'waiter',     'waiter@aromacoffee.vn',     'Waiter@2345!',     '2345', 'Hoàng Nhân (Order Bàn)',        'Waiter',     '0905555666'),
+(5, 1,    'barista',    'barista@aromacoffee.vn',    'Barista@3456!',    '3456', 'Nguyễn Văn Barista',            'Barista',    '0912333444');
 
 -- 4. Khởi tạo Bàn (Tables)
 INSERT INTO Tables (TableID, StoreID, TableName, AreaName, Capacity, Status, QRToken) VALUES
@@ -383,12 +400,22 @@ INSERT INTO Tables (TableID, StoreID, TableName, AreaName, Capacity, Status, QRT
 (4, 2, 'Bàn Trà 01', 'Sảnh Hoàng Gia', 4, 'Available', 'QR-ROSE-01');
 
 -- 5. Khởi tạo Thực đơn (MenuItems)
-INSERT INTO MenuItems (ItemID, StoreID, CategoryName, ItemName, SKU, BasePrice) VALUES
-(1, 1, 'Cà Phê', 'Cà Phê Muối Đặc Biệt', 'CF-SALT', 35000),
-(2, 1, 'Trà',     'Trà Sen Vàng Aroma',    'TEA-LOTUS', 45000),
-(3, 2, 'Trà Anh', 'Trà Earl Grey Hoàng Gia', 'TEA-EARL', 65000);
+INSERT INTO MenuItems (ItemID, StoreID, CategoryName, ItemName, SKU, BasePrice, AllowsTopping, AvailableToppings) VALUES
+(1, 1, 'Cà Phê', 'Cà Phê Muối Đặc Biệt', 'CF-SALT', 35000, FALSE, '[]'),
+(2, 1, 'Cà Phê', 'Cà Phê Sữa Đá Sài Gòn', 'CF-MILK', 29000, FALSE, '[]'),
+(3, 1, 'Trà & Macchiato', 'Trà Đào Cam Sả Tươi', 'TEA-PEACH', 42000, TRUE, '["Trân châu đen", "Trân châu trắng", "Thạch đào giòn"]'),
+(4, 1, 'Đá Xay - Freeze', 'Matcha Đá Xay Hạnh Nhân', 'ICE-MATCHA', 48000, TRUE, '["Kem Cheese Macchiato", "Trân châu đen"]'),
+(5, 1, 'Bánh Ngọt', 'Bánh Tiramisu Truyền Thống', 'CAKE-TIRA', 40000, FALSE, '[]');
 
--- 6. Khởi tạo Khách hàng CRM (Customers)
+-- 6. Khởi tạo Topping Quán (Toppings)
+INSERT INTO Toppings (ToppingID, StoreID, ToppingName, Price, IsAvailable) VALUES
+(1, 1, 'Trân châu đen', 5000, TRUE),
+(2, 1, 'Trân châu trắng', 7000, TRUE),
+(3, 1, 'Thạch đào giòn', 8000, TRUE),
+(4, 1, 'Kem Cheese Macchiato', 10000, TRUE),
+(5, 1, 'Thạch sương sáo', 5000, TRUE);
+
+-- 7. Khởi tạo Khách hàng CRM (Customers)
 INSERT INTO Customers (CustomerID, StoreID, FullName, Phone, MembershipTier, LoyaltyPoints, TotalSpent) VALUES
 (1, 1, 'Nguyễn Văn An', '0901234567', 'Gold', 450, 4500000),
-(2, 2, 'Vũ Hoàng Yến',  '0901234567', 'Diamond', 1200, 15000000); -- Trùng SĐT nhưng ở 2 quán độc lập hoàn toàn!
+(2, 2, 'Vũ Hoàng Yến',  '0901234567', 'Diamond', 1200, 15000000);
