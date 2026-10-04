@@ -17,6 +17,10 @@
       "dest": "/api/index.js"
     },
     {
+      "src": "/login",
+      "dest": "/frontend/login.html"
+    },
+    {
       "src": "/pos",
       "dest": "/frontend/pos.html"
     },

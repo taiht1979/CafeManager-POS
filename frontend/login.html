@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="vi" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Đăng Nhập & Phân Quyền Vận Hành - CafeManager POS</title>
+    <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        if (window.tailwind) {
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        fontFamily: {
+                            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                            mono: ['"JetBrains Mono"', 'monospace']
+                        },
+                        colors: {
+                            amber: {
+                                400: '#fbbf24',
+                                500: '#f59e0b',
+                                600: '#d97706',
+                                700: '#b45309'
+                            },
+                            dark: {
+                                850: '#111827',
+                                900: '#0b0f17',
+                                950: '#05070b'
+                            }
+                        }
+                    }
+                }
+            };
+        }
+    </script>
+    <style>
+        .touch-action-manipulation { touch-action: manipulation; }
+        .glass-card {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.85) 100%);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .pin-dot {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .pin-dot.filled {
+            background-color: #f59e0b;
+            border-color: #fbbf24;
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.6);
+            transform: scale(1.15);
+        }
+        .numpad-btn {
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: all 0.15s ease;
+        }
+        .numpad-btn:active {
+            transform: scale(0.92);
+            background-color: rgba(245, 158, 11, 0.25);
+        }
+        @keyframes subtle-float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-6px); }
+        }
+        .animate-float {
+            animation: subtle-float 4s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="min-h-[100dvh] font-sans antialiased bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-amber-500 selection:text-slate-950 p-3 sm:p-6 overflow-x-hidden">
+
+    <!-- Top Ambient Glow Decor -->
+    <div class="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-2xl h-64 bg-amber-500/10 blur-[120px] pointer-events-none -z-10"></div>
+    <div class="fixed bottom-0 right-0 w-80 h-80 bg-indigo-500/10 blur-[140px] pointer-events-none -z-10"></div>
+
+    <!-- Header / Brand -->
+    <header class="w-full max-w-md mx-auto pt-2 pb-4 text-center">
+        <div class="inline-flex items-center justify-center gap-3 mb-2">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-400 text-slate-950 flex items-center justify-center text-2xl shadow-lg shadow-amber-500/30 animate-float">
+                ☕
+            </div>
+            <div class="text-left">
+                <div class="flex items-center gap-2">
+                    <h1 class="text-xl font-black text-white tracking-tight leading-none">CafeManager</h1>
+                    <span class="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">POS PRO</span>
+                </div>
+                <p class="text-xs text-slate-400 font-medium mt-0.5">Xác thực người dùng & Phân quyền vận hành</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Login Container -->
+    <main class="w-full max-w-md mx-auto flex-1 flex flex-col justify-center">
+
+        <!-- Banner thông báo khi chuyển từ trang bị chặn quyền -->
+        <div id="redirect-notice-banner" class="hidden mb-4 p-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/40 text-xs flex items-center gap-3">
+            <span class="text-2xl shrink-0">🛡️</span>
+            <div>
+                <div class="font-bold text-rose-300">Yêu cầu quyền truy cập</div>
+                <div class="text-[11px] text-slate-300" id="redirect-notice-text">Chức năng bạn vừa mở yêu cầu tài khoản có thẩm quyền cao hơn. Vui lòng đăng nhập để tiếp tục.</div>
+            </div>
+        </div>
+
+        <!-- Banner chào mừng nếu đã có phiên trước đó -->
+        <div id="existing-session-banner" class="hidden mb-4 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <span class="text-xl" id="sess-role-icon">👤</span>
+                <div>
+                    <div class="text-[11px] text-slate-400">Tài khoản đang đăng nhập:</div>
+                    <div class="text-xs font-black text-white" id="sess-user-name">Hoàng Nhân (Order)</div>
+                </div>
+            </div>
+            <button onclick="continueExistingSession()" class="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md transition-all">
+                Vào ngay ➔
+            </button>
+        </div>
+
+        <!-- Card Đăng Nhập Chính -->
+        <div class="glass-card rounded-3xl p-5 sm:p-7 shadow-2xl relative overflow-hidden">
+            
+            <!-- Tab Switcher: Mã PIN Nhanh vs Tài Khoản & Mật Khẩu -->
+            <div class="flex p-1 rounded-2xl bg-slate-900/90 border border-slate-800 mb-5">
+                <button type="button" id="tab-btn-pin" onclick="switchLoginMode('pin')" class="flex-1 py-2.5 rounded-xl font-black text-xs flex items-center justify-center gap-2 bg-amber-500 text-slate-950 shadow-md transition-all">
+                    <span>⚡</span>
+                    <span>Mã PIN 4 Số (Nhanh)</span>
+                </button>
+                <button type="button" id="tab-btn-account" onclick="switchLoginMode('account')" class="flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 text-slate-400 hover:text-white transition-all">
+                    <span>🔑</span>
+                    <span>Tài Khoản / Mật Khẩu</span>
+                </button>
+            </div>
+
+            <!-- ============================================================== -->
+            <!-- MODE 1: ĐĂNG NHẬP MÃ PIN (CẢM ỨNG ĐIỆN THOẠI & POS)            -->
+            <!-- ============================================================== -->
+            <div id="mode-pin-container" class="space-y-4">
+                
+                <div class="text-center">
+                    <p class="text-xs text-slate-400">Nhập mã PIN cá nhân 4 số để vào ca làm việc:</p>
+                    
+                    <!-- 4 Ô Chấm PIN -->
+                    <div class="flex justify-center items-center gap-4 my-4">
+                        <div class="pin-dot w-4 h-4 rounded-full border-2 border-slate-600 bg-slate-800/80" id="dot-0"></div>
+                        <div class="pin-dot w-4 h-4 rounded-full border-2 border-slate-600 bg-slate-800/80" id="dot-1"></div>
+                        <div class="pin-dot w-4 h-4 rounded-full border-2 border-slate-600 bg-slate-800/80" id="dot-2"></div>
+                        <div class="pin-dot w-4 h-4 rounded-full border-2 border-slate-600 bg-slate-800/80" id="dot-3"></div>
+                    </div>
+
+                    <!-- Thông báo lỗi PIN -->
+                    <div id="pin-error-msg" class="hidden text-[11px] font-bold text-rose-400 py-1 bg-rose-950/40 rounded-lg border border-rose-900/50 mb-2"></div>
+                </div>
+
+                <!-- Bàn phím số cảm ứng (Touch Numpad) tối ưu cho ngón tay -->
+                <div class="grid grid-cols-3 gap-2.5 max-w-[280px] mx-auto">
+                    <button type="button" onclick="inputPinDigit('1')" class="numpad-btn h-14 rounded-2xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 text-xl font-mono font-bold text-white shadow-sm flex items-center justify-center">1</button>
+                    <button type="button" onclick="inputPinDigit('2')" class="numpad-btn h-14 rounded-2xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 text-xl font-mono font-bold text-white shadow-sm flex items-center justify-center">2</button>
+                    <button type="button" onclick="inputPinDigit('3')" class="numpad-btn h-14 rounded-2xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 text-xl font-mono font-bold text-white shadow-sm flex items-center justify-center">3</button>
+                    
+                    <button type="button" onclick="inputPinDigit('4')" class="numpad-btn h-14 rounded-2xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 text-xl font-mono font-bold text-white shadow-sm flex items-center justify-center">4</button>
+                    <button type="button" onclick="inputPinDigit('5')" class="numpad-btn h-14 rounded-2xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 text-xl font-mono font-bold text-white shadow-sm flex items-center justify-center">5</button>
+                    <button type="button" onclick="inputPinDigit('6')" class="numpad-btn h-14 rounded-2xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 text-xl font-mono font-bold text-white shadow-sm flex items-center justify-center">6</button>
+                    
+                    <button type="button" onclick="inputPinDigit('7')" class="numpad-btn h-14 rounded-2xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 text-xl font-mono font-bold text-white shadow-sm flex items-center justify-center">7</button>
+                    <button type="button" onclick="inputPinDigit('8')" class="numpad-btn h-14 rounded-2xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 text-xl font-mono font-bold text-white shadow-sm flex items-center justify-center">8</button>
+                    <button type="button" onclick="inputPinDigit('9')" class="numpad-btn h-14 rounded-2xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 text-xl font-mono font-bold text-white shadow-sm flex items-center justify-center">9</button>
+                    
+                    <button type="button" onclick="clearPin()" class="numpad-btn h-14 rounded-2xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-xs font-black text-rose-300 flex items-center justify-center">XÓA</button>
+                    <button type="button" onclick="inputPinDigit('0')" class="numpad-btn h-14 rounded-2xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 text-xl font-mono font-bold text-white shadow-sm flex items-center justify-center">0</button>
+                    <button type="button" onclick="backspacePin()" class="numpad-btn h-14 rounded-2xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 text-lg font-bold text-slate-300 flex items-center justify-center">⌫</button>
+                </div>
+
+                <!-- Tùy chọn: Lưu mật khẩu / Ghi nhớ đăng nhập -->
+                <div class="flex items-center justify-between px-2 pt-1">
+                    <label class="flex items-center gap-2 cursor-pointer select-none text-slate-300">
+                        <input type="checkbox" id="chk-remember-pin" checked class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-amber-500 focus:ring-0">
+                        <span class="text-[11px] font-semibold">Lưu mật khẩu / Ghi nhớ lần sau</span>
+                    </label>
+                    <button type="button" onclick="clearSavedCredentials()" id="btn-clear-saved" class="hidden text-[10px] text-slate-500 hover:text-rose-400 underline">Xóa thông tin đã lưu</button>
+                </div>
+
+            </div>
+
+            <!-- ============================================================== -->
+            <!-- MODE 2: ĐĂNG NHẬP TÀI KHOẢN & MẬT KHẨU                          -->
+            <!-- ============================================================== -->
+            <form id="mode-account-container" class="hidden space-y-4" onsubmit="handleAccountLogin(event)">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Tên đăng nhập hoặc SĐT</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 pointer-events-none text-sm">👤</span>
+                        <input type="text" id="acc-username" required placeholder="Nhập tên đăng nhập hoặc số điện thoại..." 
+                               class="w-full pl-10 pr-4 py-2.5 bg-slate-900/90 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-500 font-medium">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Mật khẩu</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 pointer-events-none text-sm">🔒</span>
+                        <input type="password" id="acc-password" required placeholder="Nhập mật khẩu tài khoản..." 
+                               class="w-full pl-10 pr-10 py-2.5 bg-slate-900/90 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-500 font-medium font-mono">
+                        <button type="button" onclick="togglePasswordVisibility()" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white text-xs">
+                            👁️
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tùy chọn: Lưu mật khẩu / Ghi nhớ đăng nhập cho tài khoản -->
+                <div class="flex items-center justify-between px-1">
+                    <label class="flex items-center gap-2 cursor-pointer select-none text-slate-300">
+                        <input type="checkbox" id="chk-remember-acc" checked class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-amber-500 focus:ring-0">
+                        <span class="text-[11px] font-semibold">Lưu mật khẩu / Ghi nhớ lần sau</span>
+                    </label>
+                </div>
+
+                <div id="acc-error-msg" class="hidden text-[11px] font-bold text-rose-400 py-1.5 px-3 bg-rose-950/40 rounded-xl border border-rose-900/50"></div>
+
+                <button type="submit" id="btn-submit-account" class="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/25 active:scale-95 transition-all flex items-center justify-center gap-2">
+                    <span>XÁC THỰC & ĐĂNG NHẬP</span>
+                    <span>➔</span>
+                </button>
+            </form>
+
+        </div>
+
+    </main>
+
+    <!-- Footer Copyright -->
+    <footer class="w-full max-w-md mx-auto pt-4 pb-2 text-center text-[10px] text-slate-500 font-mono">
+        CafeManager POS v2.5.0 • B2B SaaS Multi-Tenant Cloud System
+    </footer>
+
+    <!-- Auth Module JS -->
+    <script src="js/auth.js"></script>
+
+    <script>
+        // State mã PIN
+        let currentPin = '';
+        const MAX_PIN_LENGTH = 4;
+
+        // Khởi tạo trang
+        window.addEventListener('DOMContentLoaded', () => {
+            initRememberAndSession();
+            
+            // Lắng nghe bàn phím cứng nếu có (PC / Laptop)
+            window.addEventListener('keydown', handleKeyboardInput);
+        });
+
+        // Khởi tạo trạng thái phiên đăng nhập & thông tin lưu
+        function initRememberAndSession() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const isSwitch = urlParams.get('switch') === '1';
+            const redirectParam = urlParams.get('redirect');
+
+            // 1. Hiển thị thông báo nếu được chuyển đến do bị chặn quyền
+            if (isSwitch || redirectParam) {
+                const noticeBanner = document.getElementById('redirect-notice-banner');
+                const noticeText = document.getElementById('redirect-notice-text');
+                if (noticeBanner && noticeText) {
+                    noticeBanner.classList.remove('hidden');
+                    const targetName = redirectParam ? `[${redirectParam}]` : 'chức năng yêu cầu';
+                    noticeText.innerHTML = `Vui lòng đăng nhập tài khoản có thẩm quyền (hoặc Quản Lý / Super Admin) để tiếp tục vào <strong>${targetName}</strong>.`;
+                }
+            }
+
+            // 2. Kiểm tra thông tin đã lưu (Remember Me)
+            const remembered = CafeAuth.getRememberedAuth();
+            if (remembered) {
+                const btnClear = document.getElementById('btn-clear-saved');
+                if (btnClear) btnClear.classList.remove('hidden');
+
+                // Điền sẵn tên đăng nhập nếu có
+                if (remembered.username) {
+                    const accUser = document.getElementById('acc-username');
+                    if (accUser) accUser.value = remembered.username;
+                }
+
+                // Điền sẵn mã PIN nếu có
+                if (remembered.pin && remembered.pin.length === 4) {
+                    currentPin = remembered.pin;
+                    updatePinDotsUI();
+                }
+            }
+
+            // 3. Kiểm tra phiên đăng nhập hiện tại
+            const user = CafeAuth.getCurrentUser();
+            if (user && !isSwitch) {
+                const banner = document.getElementById('existing-session-banner');
+                if (banner) {
+                    banner.classList.remove('hidden');
+                    document.getElementById('sess-role-icon').textContent = user.roleIcon || '👤';
+                    document.getElementById('sess-user-name').textContent = `${user.fullName || user.username} (${user.roleName || user.role})`;
+                }
+            }
+        }
+
+        function continueExistingSession() {
+            const user = CafeAuth.getCurrentUser();
+            if (user) {
+                const urlParams = new URLSearchParams(window.location.search);
+                const redirectParam = urlParams.get('redirect');
+                const screen = redirectParam || user.defaultScreen || CafeAuth.getDefaultScreenForRole(user.role);
+                window.location.href = screen;
+            }
+        }
+
+        // Xóa thông tin đã lưu
+        function clearSavedCredentials() {
+            CafeAuth.clearRememberedAuth();
+            clearPin();
+            const accUser = document.getElementById('acc-username');
+            if (accUser) accUser.value = '';
+            const btnClear = document.getElementById('btn-clear-saved');
+            if (btnClear) btnClear.classList.add('hidden');
+            alert('✓ Đã xóa sạch thông tin tài khoản và mật khẩu/PIN đã lưu trên thiết bị này.');
+        }
+
+        // Chuyển đổi giữa chế độ PIN và Tài khoản
+        function switchLoginMode(mode) {
+            const btnPin = document.getElementById('tab-btn-pin');
+            const btnAcc = document.getElementById('tab-btn-account');
+            const pinContainer = document.getElementById('mode-pin-container');
+            const accContainer = document.getElementById('mode-account-container');
+
+            if (mode === 'pin') {
+                btnPin.className = 'flex-1 py-2.5 rounded-xl font-black text-xs flex items-center justify-center gap-2 bg-amber-500 text-slate-950 shadow-md transition-all';
+                btnAcc.className = 'flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 text-slate-400 hover:text-white transition-all';
+                pinContainer.classList.remove('hidden');
+                accContainer.classList.add('hidden');
+            } else {
+                btnAcc.className = 'flex-1 py-2.5 rounded-xl font-black text-xs flex items-center justify-center gap-2 bg-amber-500 text-slate-950 shadow-md transition-all';
+                btnPin.className = 'flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 text-slate-400 hover:text-white transition-all';
+                pinContainer.classList.add('hidden');
+                accContainer.classList.remove('hidden');
+            }
+        }
+
+        // Nhập từng chữ số PIN
+        function inputPinDigit(digit) {
+            if (currentPin.length < MAX_PIN_LENGTH) {
+                currentPin += digit;
+                updatePinDotsUI();
+                playClickTone();
+
+                if (currentPin.length === MAX_PIN_LENGTH) {
+                    // Tự động kiểm tra ngay khi đủ 4 số!
+                    setTimeout(() => {
+                        verifyPinAndRedirect(currentPin);
+                    }, 120);
+                }
+            }
+        }
+
+        function clearPin() {
+            currentPin = '';
+            updatePinDotsUI();
+            hidePinError();
+        }
+
+        function backspacePin() {
+            if (currentPin.length > 0) {
+                currentPin = currentPin.slice(0, -1);
+                updatePinDotsUI();
+                hidePinError();
+            }
+        }
+
+        function updatePinDotsUI() {
+            for (let i = 0; i < MAX_PIN_LENGTH; i++) {
+                const dot = document.getElementById(`dot-${i}`);
+                if (i < currentPin.length) {
+                    dot.classList.add('filled');
+                } else {
+                    dot.classList.remove('filled');
+                }
+            }
+        }
+
+        // Xác thực mã PIN và chuyển ngay về màn hình mặc định
+        async function verifyPinAndRedirect(pin) {
+            const remember = document.getElementById('chk-remember-pin')?.checked ?? true;
+            const res = await CafeAuth.loginWithPin(pin, remember);
+            if (res.success) {
+                showSuccessAndRedirect(res.user);
+            } else {
+                showPinError(res.error || 'Mã PIN không đúng!');
+                currentPin = '';
+                updatePinDotsUI();
+            }
+        }
+
+        function showPinError(msg) {
+            const errBox = document.getElementById('pin-error-msg');
+            errBox.textContent = '⚠️ ' + msg;
+            errBox.classList.remove('hidden');
+        }
+
+        function hidePinError() {
+            const errBox = document.getElementById('pin-error-msg');
+            errBox.classList.add('hidden');
+        }
+
+        // Bàn phím máy tính
+        function handleKeyboardInput(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+            
+            if (e.key >= '0' && e.key <= '9') {
+                inputPinDigit(e.key);
+            } else if (e.key === 'Backspace') {
+                backspacePin();
+            } else if (e.key === 'Escape') {
+                clearPin();
+            }
+        }
+
+        // Đăng nhập bằng Form tài khoản & mật khẩu
+        async function handleAccountLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('acc-username').value.trim();
+            const password = document.getElementById('acc-password').value;
+            const remember = document.getElementById('chk-remember-acc')?.checked ?? true;
+            const errBox = document.getElementById('acc-error-msg');
+
+            errBox.classList.add('hidden');
+
+            const res = await CafeAuth.login({ username, password, remember });
+            if (res.success) {
+                showSuccessAndRedirect(res.user);
+            } else {
+                errBox.textContent = '⚠️ ' + (res.error || 'Đăng nhập không thành công');
+                errBox.classList.remove('hidden');
+            }
+        }
+
+        // Hiển thị thông báo chào mừng và chuyển hướng
+        function showSuccessAndRedirect(user) {
+            // Kiểm tra tham số redirect trên URL nếu có
+            const params = new URLSearchParams(window.location.search);
+            const redirectParam = params.get('redirect');
+
+            // Nếu redirectParam yêu cầu quyền mà user này không có, hãy chuyển họ về defaultScreen của họ
+            let targetScreen = user.defaultScreen || CafeAuth.getDefaultScreenForRole(user.role);
+            if (redirectParam && CafeAuth.canAccessScreen(redirectParam, user)) {
+                targetScreen = redirectParam;
+            }
+
+            // Tạo toast thông báo
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-6 inset-x-4 max-w-sm mx-auto z-50 p-4 rounded-2xl bg-emerald-950 border border-emerald-500/50 shadow-2xl text-white text-xs flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300';
+            toast.innerHTML = `
+                <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl shrink-0">
+                    ${user.roleIcon || '✓'}
+                </div>
+                <div>
+                    <div class="font-black text-emerald-300 text-sm">Xác thực thành công!</div>
+                    <div class="text-[11px] text-slate-300 mt-0.5">Chào mừng <strong>${user.fullName}</strong> (${user.roleName || user.role})</div>
+                    <div class="text-[10px] text-emerald-400 font-bold mt-1">Đang mở: ${targetScreen}...</div>
+                </div>
+            `;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                window.location.href = targetScreen;
+            }, 600);
+        }
+
+        function togglePasswordVisibility() {
+            const input = document.getElementById('acc-password');
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
+        // Âm thanh phản hồi khi bấm phím
+        function playClickTone() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, ctx.currentTime);
+                gain.gain.setValueAtTime(0.08, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.08);
+            } catch (e) {}
+        }
+    </script>
+</body>
+</html>

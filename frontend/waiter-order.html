@@ -2,7 +2,7 @@
 <html lang="vi" class="h-full bg-slate-950 text-slate-100">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Order Tại Bàn (Mobile Waiter) - CafeManager Pro</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,13 +37,25 @@
         }
     </script>
     <style>
+        html, body {
+            height: 100dvh;
+            height: -webkit-fill-available;
+            overscroll-behavior: none;
+        }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .touch-manipulation { touch-action: manipulation; }
-        .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 20px); }
+        .safe-bottom { 
+            padding-bottom: max(16px, env(safe-area-inset-bottom, 16px)); 
+        }
+        #menu-container {
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: contain;
+        }
     </style>
+    <script src="js/auth.js"></script>
 </head>
-<body class="h-full font-sans antialiased bg-slate-950 text-slate-100 select-none flex flex-col justify-between overflow-hidden">
+<body class="h-[100dvh] font-sans antialiased bg-slate-950 text-slate-100 select-none flex flex-col justify-between overflow-hidden">
 
     <!-- ============================================================== -->
     <!-- TOP HEADER: Mobile Bar & Table Selector                        -->
@@ -68,12 +80,17 @@
                 </div>
             </div>
 
-            <!-- Right: Table Selector Button -->
-            <button onclick="openTableSelectSheet()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-black text-xs shadow-md shadow-amber-500/20 active:scale-95 transition-all">
-                <span>📍</span>
-                <span id="current-table-label">Bàn 01</span>
-                <svg class="w-3.5 h-3.5 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-            </button>
+            <!-- Right: Table Selector Button & Logout Button -->
+            <div class="flex items-center gap-1.5">
+                <button onclick="openTableSelectSheet()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-black text-xs shadow-md shadow-amber-500/20 active:scale-95 transition-all">
+                    <span>📍</span>
+                    <span id="current-table-label">Bàn 01</span>
+                    <svg class="w-3.5 h-3.5 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <a href="login.html" title="Đổi tài khoản / Đăng xuất" class="p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-amber-400 border border-slate-700 active:scale-95 transition-transform text-xs font-bold flex items-center justify-center">
+                    🚪
+                </a>
+            </div>
         </div>
 
         <!-- Search Bar -->
@@ -213,38 +230,14 @@
                 </div>
             </div>
 
-            <!-- Toppings -->
-            <div>
-                <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">4. Topping Thêm</label>
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <label class="flex items-center justify-between p-2 rounded-xl bg-slate-800/80 border border-slate-700/80 cursor-pointer">
-                        <div class="flex items-center gap-2">
-                            <input type="checkbox" onchange="toggleTopping('Trân châu trắng', 10000, this)" class="w-4 h-4 accent-amber-500 rounded">
-                            <span>Trân châu trắng</span>
-                        </div>
-                        <span class="text-amber-400 font-mono text-[11px]">+10k</span>
-                    </label>
-                    <label class="flex items-center justify-between p-2 rounded-xl bg-slate-800/80 border border-slate-700/80 cursor-pointer">
-                        <div class="flex items-center gap-2">
-                            <input type="checkbox" onchange="toggleTopping('Thạch đào', 10000, this)" class="w-4 h-4 accent-amber-500 rounded">
-                            <span>Thạch đào</span>
-                        </div>
-                        <span class="text-amber-400 font-mono text-[11px]">+10k</span>
-                    </label>
-                    <label class="flex items-center justify-between p-2 rounded-xl bg-slate-800/80 border border-slate-700/80 cursor-pointer">
-                        <div class="flex items-center gap-2">
-                            <input type="checkbox" onchange="toggleTopping('Kem Cheese', 12000, this)" class="w-4 h-4 accent-amber-500 rounded">
-                            <span>Kem Cheese</span>
-                        </div>
-                        <span class="text-amber-400 font-mono text-[11px]">+12k</span>
-                    </label>
-                    <label class="flex items-center justify-between p-2 rounded-xl bg-slate-800/80 border border-slate-700/80 cursor-pointer">
-                        <div class="flex items-center gap-2">
-                            <input type="checkbox" onchange="toggleTopping('Hạt sen bùi', 12000, this)" class="w-4 h-4 accent-amber-500 rounded">
-                            <span>Hạt sen bùi</span>
-                        </div>
-                        <span class="text-amber-400 font-mono text-[11px]">+12k</span>
-                    </label>
+            <!-- Toppings (Chỉ hiển thị khi món có cho phép chọn Topping) -->
+            <div id="waiter-toppings-section">
+                <div class="flex items-center justify-between mb-2">
+                    <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">4. Topping Thêm</label>
+                    <span class="text-[10px] text-amber-400/80 font-medium">Chọn tùy thích</span>
+                </div>
+                <div id="waiter-toppings-grid" class="grid grid-cols-2 gap-2 text-xs">
+                    <!-- Rendered dynamically by openItemCustomModal() -->
                 </div>
             </div>
 
@@ -388,6 +381,9 @@
         }
     </script>
 
+    <!-- AUTH SCRIPT -->
+    <script src="js/auth.js"></script>
+
     <!-- MAIN APP SCRIPT -->
     <script>
         // Synchronized Broadcast Channel with POS & Barista
@@ -446,7 +442,7 @@
                 tableOrders = JSON.parse(localStorage.getItem('pos_table_orders') || '{}');
                 renderCartSummary();
                 showToast(`Bàn ${currentTableName} vừa thanh toán tại Quầy POS!`, 'info');
-            } else if (data.type === 'MENU_UPDATED' || data.type === 'TABLES_UPDATED') {
+            } else if (data.type === 'MENU_UPDATED' || data.type === 'TABLES_UPDATED' || data.type === 'TOPPINGS_UPDATED') {
                 renderMenu();
             }
         };
@@ -455,7 +451,30 @@
             return new Intl.NumberFormat('vi-VN').format(Math.round(amount)) + ' đ';
         }
 
+        // Lấy danh sách Topping được cấu hình trong Store Admin
+        function getStoreToppings() {
+            const stored = JSON.parse(localStorage.getItem('admin_store_toppings') || 'null');
+            if (stored && stored.length > 0) return stored;
+            return [
+                { id: 'top-1', name: 'Trân Châu Trắng Thủy Tinh', price: 10000 },
+                { id: 'top-2', name: 'Kem Phô Mai Cheese', price: 12000 },
+                { id: 'top-3', name: 'Thạch Đào Giòn', price: 10000 },
+                { id: 'top-4', name: 'Hạt Sen Bùi Béo', price: 12000 },
+                { id: 'top-5', name: 'Trân Châu Hoàng Kim', price: 10000 },
+                { id: 'top-6', name: 'Sương Sáo Thảo Mộc', price: 8000 }
+            ];
+        }
+
         function loadStaffName() {
+            if (window.CafeAuth) {
+                const user = CafeAuth.getCurrentUser();
+                if (user) {
+                    currentStaffName = user.fullName || user.username;
+                    const waiterEl = document.getElementById('current-waiter-name');
+                    if (waiterEl) waiterEl.textContent = currentStaffName;
+                    return;
+                }
+            }
             const staffList = JSON.parse(localStorage.getItem('admin_store_staff') || '[]');
             const waiter = staffList.find(s => s.role === 'Waiter' && s.active !== false);
             if (waiter) {
@@ -473,17 +492,27 @@
         function getActiveMenu() {
             const adminMenu = JSON.parse(localStorage.getItem('admin_store_menu') || 'null');
             if (adminMenu && adminMenu.length > 0) {
-                return adminMenu.map(m => ({
-                    id: m.id,
-                    cat: m.cat === 'Cà Phê' ? 'coffee' : m.cat === 'Trà & Macchiato' ? 'tea' : m.cat === 'Đá Xay - Freeze' ? 'ice' : m.cat === 'Bánh Ngọt' ? 'cake' : 'topping',
-                    name: m.name,
-                    price: m.price,
-                    emoji: m.img || '☕',
-                    desc: m.desc || '',
-                    available: m.available !== false
-                }));
+                return adminMenu.map(m => {
+                    const isCoffeeOrCake = (m.cat === 'Cà Phê' || m.cat === 'Bánh Ngọt');
+                    const allowTopping = m.allowTopping !== undefined ? (m.allowTopping === true) : !isCoffeeOrCake;
+                    return {
+                        id: m.id,
+                        cat: m.cat === 'Cà Phê' ? 'coffee' : m.cat === 'Trà & Macchiato' ? 'tea' : m.cat === 'Đá Xay - Freeze' ? 'ice' : m.cat === 'Bánh Ngọt' ? 'cake' : 'topping',
+                        name: m.name,
+                        price: m.price,
+                        emoji: m.img || '☕',
+                        desc: m.desc || '',
+                        available: m.available !== false,
+                        allowTopping: allowTopping,
+                        allowedToppings: Array.isArray(m.allowedToppings) ? m.allowedToppings : []
+                    };
+                });
             }
-            return defaultMenu;
+            return defaultMenu.map(m => ({
+                ...m,
+                allowTopping: (m.cat === 'tea' || m.cat === 'ice'),
+                allowedToppings: (m.cat === 'tea' || m.cat === 'ice') ? ['Trân Châu Trắng Thủy Tinh', 'Kem Phô Mai Cheese', 'Thạch Đào Giòn'] : []
+            }));
         }
 
         function getActiveTables() {
@@ -637,6 +666,39 @@
                 toppings: [],
                 note: ''
             };
+
+            // TOPPING CHECK: Kiểm tra món có được cấu hình cho phép chọn Topping hay không (Mặc định Cà phê không cần topping)
+            const toppingSection = document.getElementById('waiter-toppings-section');
+            const toppingGrid = document.getElementById('waiter-toppings-grid');
+
+            if (!customizingItem.allowTopping) {
+                // Món không cho phép topping (VD cà phê, bánh ngọt) -> ẨN MỤC TOPPING
+                if (toppingSection) toppingSection.classList.add('hidden');
+                if (toppingGrid) toppingGrid.innerHTML = '';
+            } else {
+                // Món cho phép topping -> HIỂN THỊ và render các loại topping được phép
+                if (toppingSection) toppingSection.classList.remove('hidden');
+                const storeTops = getStoreToppings();
+                const allowedList = (customizingItem.allowedToppings && customizingItem.allowedToppings.length > 0)
+                    ? storeTops.filter(t => customizingItem.allowedToppings.includes(t.name))
+                    : storeTops;
+
+                if (toppingGrid) {
+                    if (allowedList.length === 0) {
+                        toppingGrid.innerHTML = `<div class="col-span-2 text-slate-500 text-[11px] py-1 text-center">Chưa có topping nào được chọn cho món này</div>`;
+                    } else {
+                        toppingGrid.innerHTML = allowedList.map(t => `
+                            <label class="flex items-center justify-between p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/80 cursor-pointer hover:border-amber-500/50 transition-colors">
+                                <div class="flex items-center gap-2">
+                                    <input type="checkbox" onchange="toggleTopping('${t.name}', ${t.price}, this)" class="w-4 h-4 accent-amber-500 rounded">
+                                    <span class="text-slate-200 text-xs font-medium">${t.name}</span>
+                                </div>
+                                <span class="text-amber-400 font-mono text-[11px] font-bold">+${new Intl.NumberFormat('vi-VN').format(t.price)}đ</span>
+                            </label>
+                        `).join('');
+                    }
+                }
+            }
 
             // Reset UI
             document.querySelectorAll('.modal-size-btn').forEach((b, idx) => {

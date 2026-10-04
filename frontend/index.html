@@ -2,48 +2,65 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>CafeManager POS - Hệ thống Quản trị & Bán hàng Quán Cà phê</title>
     <!-- Google Fonts: Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <script src="js/auth.js"></script>
 </head>
 <body>
+    <!-- Mobile Sidebar Backdrop Overlay -->
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleIndexSidebar(false)"></div>
+
     <div class="app-layout">
         <!-- Sidebar Navigation -->
-        <aside class="sidebar">
+        <aside class="sidebar" id="app-sidebar">
             <div class="brand">
                 <div class="brand-icon">☕</div>
-                <div class="brand-text">
+                <div class="brand-text" style="flex:1;">
                     <h2>CafeManager</h2>
                     <span class="badge">POS Pro</span>
                 </div>
+                <button onclick="toggleIndexSidebar(false)" class="sidebar-close-btn" title="Đóng menu">✕</button>
+            </div>
+
+            <!-- Logged-in User Card in Sidebar -->
+            <div id="sidebar-user-card" style="padding:10px 12px; margin: 12px 10px 0; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.25); border-radius:12px; font-size:12px; display:flex; align-items:center; justify-content:space-between;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span id="sb-user-icon" style="font-size:18px;">👤</span>
+                    <div>
+                        <div id="sb-user-name" style="font-weight:800; color:#fff; font-size:12px;">Khách vãng lai</div>
+                        <div id="sb-user-role" style="font-size:10px; color:#f59e0b; font-weight:700;">Chưa đăng nhập</div>
+                    </div>
+                </div>
+                <a href="login.html" id="sb-login-btn" style="text-decoration:none; padding:4px 8px; background:#f59e0b; color:#000; border-radius:6px; font-weight:800; font-size:10px;">Đăng nhập</a>
             </div>
 
             <nav class="nav-menu">
-                <div class="nav-item active" data-tab="overview">
+                <div class="nav-item active" data-tab="overview" onclick="toggleIndexSidebar(false)">
                     <span class="nav-icon">📊</span>
                     <span>Tổng quan</span>
                 </div>
-                <div class="nav-item" data-tab="tables">
+                <div class="nav-item" data-tab="tables" onclick="toggleIndexSidebar(false)">
                     <span class="nav-icon">🪑</span>
                     <span>Quản lý Bàn</span>
                 </div>
-                <div class="nav-item" data-tab="qr-order">
+                <div class="nav-item" data-tab="qr-order" onclick="toggleIndexSidebar(false)">
                     <span class="nav-icon">📱</span>
                     <span>QR Order</span>
                 </div>
-                <div class="nav-item" data-tab="barista">
+                <div class="nav-item" data-tab="barista" onclick="toggleIndexSidebar(false)">
                     <span class="nav-icon">🍹</span>
                     <span>Màn hình Barista</span>
                 </div>
-                <div class="nav-item" data-tab="crm">
+                <div class="nav-item" data-tab="crm" onclick="toggleIndexSidebar(false)">
                     <span class="nav-icon">👥</span>
                     <span>CRM Khách Quen</span>
                 </div>
-                <div class="nav-item" data-tab="reports">
+                <div class="nav-item" data-tab="reports" onclick="toggleIndexSidebar(false)">
                     <span class="nav-icon">📈</span>
                     <span>Báo cáo Doanh thu</span>
                 </div>
@@ -69,6 +86,10 @@
                         <span class="nav-icon">👑</span>
                         <span>Super Admin (SaaS) ➔</span>
                     </a>
+                    <a href="login.html" class="nav-item" style="text-decoration:none; color:#f59e0b;">
+                        <span class="nav-icon">🔐</span>
+                        <span>Đổi Tài Khoản / Đăng Nhập ➔</span>
+                    </a>
                 </div>
             </nav>
 
@@ -85,11 +106,15 @@
         <main class="main-content">
             <!-- Header Bar -->
             <header class="top-header">
-                <div class="header-left">
-                    <h1 id="page-title">Tổng quan Hệ thống</h1>
-                    <p class="subtitle" id="page-subtitle">Chào buổi chiều, Quản lý ca • Chi nhánh Aroma Roastery</p>
+                <div class="header-left" style="display:flex; align-items:center; gap:12px;">
+                    <button id="btn-toggle-menu" onclick="toggleIndexSidebar(true)" class="btn-sidebar-toggle" title="Mở menu danh mục">☰</button>
+                    <div>
+                        <h1 id="page-title">Tổng quan Hệ thống</h1>
+                        <p class="subtitle" id="page-subtitle">Chào mừng đến với CafeManager POS</p>
+                    </div>
                 </div>
                 <div class="header-right">
+                    <div id="user-header-chip"></div>
                     <div class="clock-badge" id="live-clock">17:50:00</div>
                     <a href="pos.html" class="btn btn-primary" id="btn-quick-order">
                         <span>+ Bán Nhanh (POS)</span>
@@ -743,6 +768,47 @@
     <!-- Notification Toast -->
     <div id="toast" class="app-toast">Thông báo</div>
 
+    <!-- Auth Module JS -->
+    <script src="js/auth.js"></script>
+    <script>
+        function toggleIndexSidebar(show) {
+            const sidebar = document.getElementById('app-sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            if (!sidebar || !overlay) return;
+            const isOpen = sidebar.classList.contains('open');
+            const shouldOpen = show !== undefined ? show : !isOpen;
+            if (shouldOpen) {
+                sidebar.classList.add('open');
+                overlay.classList.add('active');
+            } else {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            if (window.CafeAuth) {
+                CafeAuth.renderUserHeader('user-header-chip');
+                const user = CafeAuth.getCurrentUser();
+                if (user) {
+                    const iconEl = document.getElementById('sb-user-icon');
+                    const nameEl = document.getElementById('sb-user-name');
+                    const roleEl = document.getElementById('sb-user-role');
+                    const btnEl = document.getElementById('sb-login-btn');
+                    if (iconEl) iconEl.textContent = user.roleIcon || '👤';
+                    if (nameEl) nameEl.textContent = user.fullName || user.username;
+                    if (roleEl) roleEl.textContent = user.roleName || user.role;
+                    if (btnEl) {
+                        btnEl.textContent = 'Đổi ca';
+                        btnEl.style.background = '#334155';
+                        btnEl.style.color = '#f59e0b';
+                    }
+                    const subtitleEl = document.getElementById('page-subtitle');
+                    if (subtitleEl) subtitleEl.textContent = `Xin chào, ${user.fullName} • ${user.roleName || user.role}`;
+                }
+            }
+        });
+    </script>
     <script src="js/app.js"></script>
 </body>
 </html>

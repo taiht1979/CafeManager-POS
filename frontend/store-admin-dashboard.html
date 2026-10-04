@@ -2,7 +2,7 @@
 <html lang="vi" class="h-full bg-slate-950 text-slate-100">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Quản Trị Chi Nhánh (Store Admin) - CafeManager</title>
     <!-- Google Fonts: Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,6 +37,10 @@
         }
     </script>
     <style>
+        html, body {
+            height: 100dvh;
+            height: -webkit-fill-available;
+        }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
         ::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.3); border-radius: 4px; }
@@ -44,13 +48,35 @@
         .tab-view { display: none; }
         .tab-view.active { display: block; }
     </style>
+    <script src="js/auth.js"></script>
 </head>
-<body class="h-full font-sans antialiased bg-slate-950 text-slate-100 flex flex-col md:flex-row overflow-hidden">
+<body class="h-[100dvh] font-sans antialiased bg-slate-950 text-slate-100 flex flex-col md:flex-row overflow-hidden">
+
+    <!-- Mobile Top Navigation Header (Shown only on < md) -->
+    <header class="md:hidden shrink-0 h-14 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between z-30">
+        <div class="flex items-center gap-2.5">
+            <button onclick="toggleStoreSidebar(true)" class="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white border border-slate-700 text-base flex items-center justify-center">
+                ☰
+            </button>
+            <div class="flex items-center gap-2">
+                <span class="text-base">🏪</span>
+                <h1 class="text-xs font-black text-white">Store Admin Portal</h1>
+            </div>
+        </div>
+        <div class="flex items-center gap-1.5">
+            <a href="login.html" title="Đổi tài khoản" class="p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-amber-400 border border-slate-700 text-xs font-bold">
+                🚪
+            </a>
+        </div>
+    </header>
+
+    <!-- Mobile Sidebar Backdrop Overlay -->
+    <div id="store-sidebar-overlay" onclick="toggleStoreSidebar(false)" class="hidden fixed inset-0 z-40 bg-black/70 backdrop-blur-sm md:hidden transition-opacity"></div>
 
     <!-- ========================================================================= -->
-    <!-- SIDEBAR QUẢN TRỊ CHUYÊN BIỆT (MANAGEMENT ONLY)                             -->
+    <!-- SIDEBAR QUẢN TRỊ CHUYÊN BIỆT (DRAWER ON MOBILE, STATIC ON DESKTOP)          -->
     <!-- ========================================================================= -->
-    <aside class="w-full md:w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0">
+    <aside id="store-sidebar" class="fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 transform -translate-x-full md:relative md:translate-x-0 md:w-64 transition-transform duration-300 shadow-2xl md:shadow-none">
         <!-- Store Brand Head -->
         <div class="h-16 px-5 border-b border-slate-800 flex items-center justify-between">
             <div class="flex items-center gap-3">
@@ -60,14 +86,17 @@
                     <span class="text-[9px] text-amber-400 font-bold uppercase tracking-wider font-mono">PORTAL CHỦ QUÁN</span>
                 </div>
             </div>
-            <a href="index.html" title="Trở về Cổng Trung Tâm" class="text-slate-500 hover:text-white text-xs">✕</a>
+            <div class="flex items-center gap-1">
+                <button onclick="toggleStoreSidebar(false)" class="md:hidden p-1.5 text-slate-400 hover:text-white text-base">✕</button>
+                <a href="index.html" title="Trở về Cổng Trung Tâm" class="hidden md:inline-block text-slate-500 hover:text-white text-xs">✕</a>
+            </div>
         </div>
 
         <!-- Role Badge -->
         <div class="p-3 mx-3 my-2.5 rounded-xl bg-gradient-to-r from-amber-500/10 to-transparent border border-amber-500/30 flex items-center justify-between">
             <div>
                 <div class="text-[10px] text-slate-400">Tài Khoản Đăng Nhập:</div>
-                <div class="text-xs font-black text-white flex items-center gap-1.5">
+                <div class="text-xs font-black text-white flex items-center gap-1.5" id="store-admin-user-name">
                     <span>👑 Lê Hữu Nghĩa</span>
                 </div>
             </div>
@@ -173,11 +202,17 @@
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-5 rounded-2xl bg-slate-900 border border-slate-800">
                     <div>
                         <h2 class="text-base font-extrabold text-white">Quản Lý Thực Đơn & Hình Ảnh Món</h2>
-                        <p class="text-xs text-slate-400">Thêm mới, sửa giá, cập nhật hình ảnh món to rõ và quản lý danh mục</p>
+                        <p class="text-xs text-slate-400">Thêm mới, sửa giá, tải lên hình ảnh món và cấu hình topping tùy biến khi order</p>
                     </div>
-                    <button onclick="openAddMenuModal()" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md flex items-center gap-1.5">
-                        <span>+ THÊM MÓN MỚI</span>
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <button onclick="openToppingManagerModal()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/40 font-bold text-xs shadow-md flex items-center gap-1.5 transition-all">
+                            <span>🧋</span>
+                            <span>Quản Lý Topping Quán</span>
+                        </button>
+                        <button onclick="openAddMenuModal()" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md flex items-center gap-1.5 transition-all">
+                            <span>+ THÊM MÓN MỚI</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Menu Table -->
@@ -189,6 +224,7 @@
                                 <th class="py-3.5 px-4">Danh Mục</th>
                                 <th class="py-3.5 px-4">Mã SKU</th>
                                 <th class="py-3.5 px-4">Đơn Giá Bán</th>
+                                <th class="py-3.5 px-4">Topping Khi Order</th>
                                 <th class="py-3.5 px-4">Trạng Thái</th>
                                 <th class="py-3.5 px-5 text-right">Thao Tác</th>
                             </tr>
@@ -214,17 +250,30 @@
                     </button>
                 </div>
 
+                <!-- Hướng dẫn cấp thông tin cho nhân viên -->
+                <div class="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-slate-900 border border-amber-500/30 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="flex items-start sm:items-center gap-3">
+                        <span class="text-2xl shrink-0 p-2 rounded-xl bg-amber-500/20 border border-amber-500/30">💡</span>
+                        <div>
+                            <div class="font-extrabold text-amber-300">Cách thông báo cho nhân viên đăng nhập:</div>
+                            <div class="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
+                                Nhân viên đăng nhập nhanh bằng <strong>Mã PIN 4 số</strong> (khuyên dùng trên điện thoại / máy POS) hoặc bằng <strong>Tên đăng nhập / Số điện thoại</strong>. Bấm nút <strong class="text-amber-400">📋 Cấp Info</strong> trên từng nhân viên để sao chép thông tin gửi Zalo / SMS cho nhân viên!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Staff Table -->
                 <div class="rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden shadow-xl">
                     <table class="w-full text-left text-xs">
                         <thead class="bg-slate-950/70 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
                             <tr>
-                                <th class="py-3.5 px-5">Họ Và Tên</th>
+                                <th class="py-3.5 px-5">Nhân Viên & Tên Đăng Nhập</th>
                                 <th class="py-3.5 px-4">Phân Quyền Vai Trò</th>
                                 <th class="py-3.5 px-4">Số Điện Thoại</th>
-                                <th class="py-3.5 px-4">Mã PIN Xác Thực</th>
+                                <th class="py-3.5 px-4">Mã PIN Đăng Nhập</th>
                                 <th class="py-3.5 px-4">Trạng Thái</th>
-                                <th class="py-3.5 px-5 text-right">Thao Tác</th>
+                                <th class="py-3.5 px-5 text-right">Cấp Thông Tin & Thao Tác</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-800/80" id="store-staff-body">
@@ -457,20 +506,37 @@
             </div>
             <input type="hidden" id="menu-edit-id">
 
-            <!-- Image Preview & Change Section -->
+            <!-- Image Preview & Upload Section -->
             <div class="p-3.5 rounded-xl bg-slate-850 border border-slate-800 flex items-center gap-4">
-                <div id="menu-img-preview" class="w-20 h-20 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-3xl overflow-hidden shrink-0 shadow-inner">
-                    ☕
+                <div id="menu-img-preview" onclick="document.getElementById('menu-file-input').click()" title="Nhấp để tải ảnh lên từ máy tính hoặc điện thoại" class="group relative w-20 h-20 rounded-2xl bg-slate-800 border-2 border-dashed border-slate-700 hover:border-amber-500 flex items-center justify-center text-3xl overflow-hidden shrink-0 shadow-inner cursor-pointer transition-all">
+                    <span>☕</span>
+                    <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-[10px] font-bold text-amber-400 transition-opacity">
+                        <span>📷</span>
+                        <span>Đổi ảnh</span>
+                    </div>
                 </div>
-                <div class="flex-1 space-y-1.5">
-                    <label class="font-bold text-slate-300 block">Hình ảnh món:</label>
+                <div class="flex-1 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <label class="font-bold text-slate-300 block text-xs">Hình ảnh món:</label>
+                        <span id="img-upload-status" class="text-[10px] text-amber-400 font-medium"></span>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <label for="menu-file-input" class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-[11px] shadow-sm transition-all">
+                            <span>📁</span>
+                            <span>Tải ảnh từ máy / điện thoại</span>
+                        </label>
+                        <input type="file" id="menu-file-input" accept="image/*" class="hidden" onchange="handleMenuImageUpload(this)">
+                        <button type="button" id="btn-remove-img" onclick="clearMenuImage()" class="hidden px-2.5 py-1.5 rounded-xl bg-rose-950/40 hover:bg-rose-900 border border-rose-800 text-rose-300 text-[11px] font-bold transition-all">
+                            ✕ Xóa ảnh
+                        </button>
+                    </div>
                     <input type="text" id="menu-img-url" oninput="updateMenuImgPreview()" placeholder="Dán link ảnh (https://...) hoặc nhập Emoji" class="w-full px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-white font-mono text-[11px] focus:outline-none focus:border-amber-500">
-                    <div class="flex items-center gap-1.5 text-[10px] text-slate-400">
-                        <span>Gợi ý nhanh:</span>
-                        <button type="button" onclick="setPresetImg('☕')" class="px-1.5 py-0.5 rounded bg-slate-700 hover:bg-slate-600 text-white">☕ Cà phê</button>
-                        <button type="button" onclick="setPresetImg('🍹')" class="px-1.5 py-0.5 rounded bg-slate-700 hover:bg-slate-600 text-white">🍹 Trà đào</button>
-                        <button type="button" onclick="setPresetImg('🧋')" class="px-1.5 py-0.5 rounded bg-slate-700 hover:bg-slate-600 text-white">🧋 Trà sữa</button>
-                        <button type="button" onclick="setPresetImg('🍰')" class="px-1.5 py-0.5 rounded bg-slate-700 hover:bg-slate-600 text-white">🍰 Bánh ngọt</button>
+                    <div class="flex items-center gap-1.5 text-[10px] text-slate-400 flex-wrap">
+                        <span>Emoji nhanh:</span>
+                        <button type="button" onclick="setPresetImg('☕')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-white">☕ Cà phê</button>
+                        <button type="button" onclick="setPresetImg('🍹')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-white">🍹 Trà đào</button>
+                        <button type="button" onclick="setPresetImg('🧋')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-white">🧋 Trà sữa</button>
+                        <button type="button" onclick="setPresetImg('🍰')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-white">🍰 Bánh ngọt</button>
                     </div>
                 </div>
             </div>
@@ -482,7 +548,7 @@
                 </div>
                 <div>
                     <label class="text-slate-400 block mb-1">Danh Mục:</label>
-                    <select id="menu-cat-input" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-bold focus:outline-none">
+                    <select id="menu-cat-input" onchange="onCategoryChange()" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-bold focus:outline-none">
                         <option value="Cà Phê">Cà Phê</option>
                         <option value="Trà & Macchiato">Trà & Macchiato</option>
                         <option value="Đá Xay - Freeze">Đá Xay - Freeze</option>
@@ -511,50 +577,224 @@
                 </div>
             </div>
 
+            <!-- CẤU HÌNH TOPPING CHO MÓN (CHỦ QUÁN CHỌN CÓ HIỂN THỊ KHI ORDER HAY KHÔNG) -->
+            <div class="p-3.5 rounded-xl bg-slate-850 border border-slate-800 space-y-3">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="font-extrabold text-white text-xs flex items-center gap-1.5">
+                            <span>🧋</span>
+                            <span>Cho phép chọn Topping khi gọi món</span>
+                        </span>
+                        <span class="text-[10px] text-slate-400 block mt-0.5">Không mặc định bật — Cà phê & Bánh ngọt thường không cần topping</span>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="menu-allow-topping" onchange="toggleToppingSelectionArea()" class="sr-only peer">
+                        <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                    </label>
+                </div>
+
+                <!-- Vùng chọn danh sách các Topping áp dụng cho món -->
+                <div id="topping-selection-container" class="hidden pt-3 border-t border-slate-800/80 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <label class="text-[11px] font-bold text-amber-400">Chọn các loại Topping phục vụ kèm món này:</label>
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="selectAllItemToppings(true)" class="text-[10px] text-slate-400 hover:text-amber-400 underline font-semibold">Chọn tất cả</button>
+                            <span class="text-slate-600">•</span>
+                            <button type="button" onclick="selectAllItemToppings(false)" class="text-[10px] text-slate-400 hover:text-amber-400 underline font-semibold">Bỏ chọn</button>
+                        </div>
+                    </div>
+                    <div id="modal-toppings-checkboxes" class="grid grid-cols-2 gap-2 max-h-44 overflow-y-auto pr-1">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
             <div class="flex gap-2 pt-2 border-t border-slate-800">
                 <button onclick="closeMenuModal()" class="flex-1 py-2.5 rounded-xl border border-slate-700 text-slate-400 font-bold">Hủy Bỏ</button>
-                <button onclick="saveMenuForm()" class="flex-1 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-black shadow-lg">LƯU MÓN</button>
+                <button onclick="saveMenuForm()" class="flex-1 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-black shadow-lg hover:bg-amber-400 transition-all">LƯU MÓN</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2.1: QUẢN LÝ DANH SÁCH TOPPING CỦA QUÁN -->
+    <div id="modal-toppings-manager" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 w-full max-w-md rounded-2xl p-6 space-y-4 text-xs animate-in fade-in zoom-in duration-200">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">🧋</span>
+                    <h3 class="font-extrabold text-white text-sm">Quản Lý Danh Sách Topping Quán</h3>
+                </div>
+                <button onclick="closeToppingManagerModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+            </div>
+            
+            <p class="text-slate-400 text-[11px]">Danh sách các loại topping đang phục vụ trong quán. Bạn có thể thêm topping mới hoặc xóa topping.</p>
+
+            <!-- Form thêm Topping mới -->
+            <div class="p-3 bg-slate-850 rounded-xl border border-slate-800 space-y-2.5">
+                <div class="font-bold text-amber-400 text-[11px]">+ Thêm Topping Mới Cho Quán:</div>
+                <div class="grid grid-cols-5 gap-2">
+                    <input type="text" id="new-topping-name" placeholder="Tên topping (VD: Thạch nha đam)" class="col-span-3 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-bold focus:outline-none focus:border-amber-500">
+                    <input type="number" id="new-topping-price" placeholder="Giá (đ)" class="col-span-2 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-mono font-bold focus:outline-none focus:border-amber-500">
+                </div>
+                <button type="button" onclick="addNewStoreTopping()" class="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-lg transition-all shadow">
+                    + THÊM VÀO DANH SÁCH TOPPING
+                </button>
+            </div>
+
+            <!-- Danh sách Topping hiện tại -->
+            <div class="space-y-1.5">
+                <div class="font-bold text-slate-300 text-[11px] flex justify-between items-center">
+                    <span>Topping đang có:</span>
+                    <span id="toppings-count-badge" class="font-mono text-amber-400">0 loại</span>
+                </div>
+                <div id="toppings-manager-list" class="max-h-56 overflow-y-auto space-y-1.5 pr-1">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-800 flex justify-end">
+                <button onclick="closeToppingManagerModal()" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl border border-slate-700">
+                    Đóng
+                </button>
             </div>
         </div>
     </div>
 
     <!-- MODAL 3: THÊM / SỬA NHÂN VIÊN & PHÂN QUYỀN VAI TRÒ -->
     <div id="modal-staff" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-2xl p-6 space-y-4 text-xs animate-in fade-in zoom-in duration-200">
+        <div class="bg-slate-900 border border-slate-700 w-full max-w-md rounded-2xl p-6 space-y-4 text-xs animate-in fade-in zoom-in duration-200">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="font-extrabold text-white text-sm" id="modal-staff-title">Thêm Nhân Sự Mới</h3>
+                <div>
+                    <h3 class="font-extrabold text-white text-sm" id="modal-staff-title">Thêm Nhân Sự Mới</h3>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Tạo tài khoản và cấp quyền đăng nhập cho nhân viên</p>
+                </div>
                 <button onclick="closeStaffModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
             </div>
             <input type="hidden" id="staff-edit-id">
 
             <div>
                 <label class="text-slate-400 block mb-1">Họ Và Tên (*):</label>
-                <input type="text" id="staff-name-input" placeholder="VD: Trần Thu Ngân" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-bold focus:outline-none focus:border-amber-500">
+                <input type="text" id="staff-name-input" oninput="onStaffNameOrPhoneChange()" placeholder="VD: Trần Thu Ngân" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-bold focus:outline-none focus:border-amber-500">
             </div>
 
             <div>
                 <label class="text-slate-400 block mb-1">Phân Quyền Vai Trò (*):</label>
-                <select id="staff-role-input" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-bold focus:outline-none">
-                    <option value="Cashier">Thu Ngân (Chỉ dùng màn hình POS)</option>
-                    <option value="Waiter">Nhân Viên Order (Chỉ dùng điện thoại gọi món)</option>
-                    <option value="Barista">Pha Chế Barista (Chỉ dùng màn hình KDS)</option>
-                    <option value="Manager">Quản Lý Ca (Toàn quyền quản lý ca & hủy hóa đơn)</option>
+                <select id="staff-role-input" onchange="onStaffRoleChange()" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-bold focus:outline-none">
+                    <option value="Cashier">Thu Ngân (Màn hình POS Bán Hàng)</option>
+                    <option value="Waiter">Nhân Viên Order (Màn hình Order Tại Bàn trên Điện Thoại)</option>
+                    <option value="Barista">Pha Chế Barista (Màn hình KDS Bếp/Bar)</option>
+                    <option value="Manager">Quản Lý Ca (Toàn quyền quản trị quán)</option>
                 </select>
+                <div id="staff-screen-hint" class="text-[10px] text-amber-400 font-mono mt-1">💻 Màn hình làm việc: pos.html (Quầy Thu Ngân)</div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="text-slate-400 block mb-1">Số Điện Thoại:</label>
+                    <input type="tel" id="staff-phone-input" oninput="onStaffNameOrPhoneChange()" placeholder="0908 888 777" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-mono focus:outline-none focus:border-amber-500">
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-slate-400 block">Tên Đăng Nhập:</label>
+                    </div>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-500 font-mono text-xs">@</span>
+                        <input type="text" id="staff-username-input" placeholder="thungan" class="w-full pl-7 pr-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-amber-400 font-mono font-bold focus:outline-none focus:border-amber-500">
+                    </div>
+                </div>
             </div>
 
             <div>
-                <label class="text-slate-400 block mb-1">Số Điện Thoại:</label>
-                <input type="tel" id="staff-phone-input" placeholder="0908 888 777" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-mono focus:outline-none focus:border-amber-500">
-            </div>
-
-            <div>
-                <label class="text-slate-400 block mb-1">Mã PIN Đăng Nhập / Xác Thực (4 số):</label>
-                <input type="password" maxlength="6" id="staff-pin-input" placeholder="1234" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-mono text-center text-sm font-bold tracking-widest focus:outline-none focus:border-amber-500">
+                <div class="flex justify-between items-center mb-1">
+                    <label class="text-slate-400 block font-semibold">Mã PIN Đăng Nhập Nhanh (4 số) (*):</label>
+                    <button type="button" onclick="generateRandomPin()" class="text-[10px] text-amber-400 hover:text-amber-300 font-bold">🎲 Tạo ngẫu nhiên</button>
+                </div>
+                <div class="relative flex items-center">
+                    <input type="text" maxlength="4" id="staff-pin-input" placeholder="1234" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-amber-400 font-mono text-center text-base font-black tracking-widest focus:outline-none focus:border-amber-500">
+                    <button type="button" onclick="togglePinVisibility()" id="btn-toggle-modal-pin" class="absolute right-3 text-slate-400 hover:text-white text-sm">👁️</button>
+                </div>
+                <p class="text-[10px] text-emerald-400 mt-1">⚡ <strong>Khuyên dùng:</strong> Nhân viên chỉ cần chạm 4 số PIN này là vào thẳng ca làm việc.</p>
             </div>
 
             <div class="flex gap-2 pt-2 border-t border-slate-800">
-                <button onclick="closeStaffModal()" class="flex-1 py-2.5 rounded-xl border border-slate-700 text-slate-400 font-bold">Hủy</button>
-                <button onclick="saveStaffForm()" class="flex-1 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-black">LƯU NHÂN SỰ</button>
+                <button onclick="closeStaffModal()" class="flex-1 py-2.5 rounded-xl border border-slate-700 text-slate-400 font-bold hover:text-white">Hủy</button>
+                <button onclick="saveStaffForm()" class="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black shadow-md">LƯU NHÂN SỰ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3.1: THÔNG TIN CẤP TÀI KHOẢN ĐĂNG NHẬP CHO NHÂN VIÊN -->
+    <div id="modal-staff-credentials" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 w-full max-w-md rounded-3xl p-6 space-y-4 text-xs animate-in fade-in zoom-in duration-200 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xl shrink-0">📋</span>
+                    <div>
+                        <h3 class="font-black text-white text-sm">Thông Tin Cấp Cho Nhân Viên Đăng Nhập</h3>
+                        <p class="text-[10px] text-slate-400">Sao chép gửi Zalo / SMS hoặc thông báo trực tiếp</p>
+                    </div>
+                </div>
+                <button onclick="closeCredentialsModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+            </div>
+
+            <!-- Card tóm tắt tài khoản siêu rõ ràng -->
+            <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
+                <div class="flex justify-between items-center border-b border-slate-800/80 pb-2.5">
+                    <span class="text-slate-400">Họ và tên nhân viên:</span>
+                    <strong class="text-white text-sm" id="cred-name">Trần Thu Ngân</strong>
+                </div>
+
+                <div class="flex justify-between items-center border-b border-slate-800/80 pb-2.5">
+                    <span class="text-slate-400">Vị trí & Phân quyền:</span>
+                    <span id="cred-role-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">Thu Ngân POS</span>
+                </div>
+
+                <div class="flex justify-between items-center border-b border-slate-800/80 pb-2.5">
+                    <div>
+                        <span class="text-slate-400 block">Tên đăng nhập (Username):</span>
+                        <span class="text-[10px] text-slate-500" id="cred-phone-note">Hoặc đăng nhập bằng SĐT: 0908 888 777</span>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-lg bg-slate-800 text-amber-400 font-mono font-bold text-xs border border-slate-700" id="cred-username">@thungan</span>
+                </div>
+
+                <div class="flex justify-between items-center border-b border-slate-800/80 pb-2.5">
+                    <div>
+                        <span class="text-slate-400 block font-semibold text-emerald-400">⚡ Mã PIN đăng nhập nhanh (4 số):</span>
+                        <span class="text-[10px] text-slate-500">Chạm 4 số trên bàn phím cảm ứng là vào ngay</span>
+                    </div>
+                    <span class="px-3.5 py-1.5 rounded-xl bg-amber-500/20 text-amber-300 font-mono font-black text-lg border border-amber-500/40 shadow-inner tracking-widest" id="cred-pin">1234</span>
+                </div>
+
+                <div class="flex justify-between items-center border-b border-slate-800/80 pb-2.5">
+                    <span class="text-slate-400">Màn hình làm việc:</span>
+                    <span class="font-mono text-cyan-300 font-semibold" id="cred-screen">pos.html (Quầy Thu Ngân)</span>
+                </div>
+
+                <div>
+                    <span class="text-slate-400 block mb-1">Đường link đăng nhập:</span>
+                    <div class="p-2 rounded-xl bg-slate-900 border border-slate-800 font-mono text-[11px] text-sky-400 break-all select-all" id="cred-url">
+                        http://localhost:3000/frontend/login.html
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="space-y-2 pt-1">
+                <button type="button" onclick="copyCredentialsToClipboard()" class="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20 active:scale-98 transition-all flex items-center justify-center gap-2">
+                    <span>📋</span>
+                    <span>SAO CHÉP THÔNG TIN GỬI QUA ZALO / SMS</span>
+                </button>
+
+                <div class="flex gap-2">
+                    <button type="button" onclick="openStaffTargetScreen()" class="flex-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 transition-all">
+                        <span>🚀</span>
+                        <span>Mở Thử Màn Hình Này</span>
+                    </button>
+                    <button type="button" onclick="closeCredentialsModal()" class="px-5 py-2 rounded-xl border border-slate-700 text-slate-400 hover:text-white font-bold text-xs transition-all">
+                        Đóng
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -619,6 +859,9 @@
     <!-- STORE ADMIN JAVASCRIPT LOGIC (PURE MANAGEMENT)                            -->
     <!-- ========================================================================= -->
     <script>
+        // Real-time synchronization across POS, Waiter, Barista, and Admin tabs
+        const syncChannel = window.BroadcastChannel ? new BroadcastChannel('pos_system_sync') : null;
+
         // State Persistence in LocalStorage
         let storeTables = JSON.parse(localStorage.getItem('admin_store_tables') || 'null');
         if (!storeTables) {
@@ -636,32 +879,88 @@
             localStorage.setItem('admin_store_tables', JSON.stringify(storeTables));
         }
 
+        // Toppings Quán (Quản lý các loại topping gọi thêm trong thực đơn)
+        let storeToppings = JSON.parse(localStorage.getItem('admin_store_toppings') || 'null');
+        if (!storeToppings || storeToppings.length === 0) {
+            storeToppings = [
+                { id: 'top-1', name: 'Trân Châu Trắng Thủy Tinh', price: 10000 },
+                { id: 'top-2', name: 'Kem Phô Mai Cheese', price: 12000 },
+                { id: 'top-3', name: 'Thạch Đào Giòn', price: 10000 },
+                { id: 'top-4', name: 'Hạt Sen Bùi Béo', price: 12000 },
+                { id: 'top-5', name: 'Trân Châu Hoàng Kim', price: 10000 },
+                { id: 'top-6', name: 'Sương Sáo Thảo Mộc', price: 8000 }
+            ];
+            localStorage.setItem('admin_store_toppings', JSON.stringify(storeToppings));
+        }
+
         let storeMenu = JSON.parse(localStorage.getItem('admin_store_menu') || 'null');
         if (!storeMenu) {
             storeMenu = [
-                { id: 1, name: 'Cà Phê Muối Đặc Biệt', cat: 'Cà Phê', sku: 'CF-SALT', price: 35000, img: '☕', desc: 'Kem muối béo mặn sánh mịn', available: true },
-                { id: 2, name: 'Trà Sen Vàng Hạt Dẻ', cat: 'Trà & Macchiato', sku: 'TEA-LOTUS', price: 45000, img: '🪷', desc: 'Hạt sen ninh nhừ bùi béo', available: true },
-                { id: 3, name: 'Cà Phê Sữa Đá Sài Gòn', cat: 'Cà Phê', sku: 'CF-MILK', price: 29000, img: '🥤', desc: 'Robusta Buôn Ma Thuột đậm vị', available: true },
-                { id: 4, name: 'Trà Đào Cam Sả Tươi', cat: 'Trà & Macchiato', sku: 'TEA-PEACH', price: 42000, img: '🍑', desc: 'Miếng đào giòn ngọt thanh', available: true },
-                { id: 5, name: 'Matcha Đá Xay Hạnh Nhân', cat: 'Đá Xay - Freeze', sku: 'ICE-MATCHA', price: 48000, img: '🍃', desc: 'Matcha Uji phủ kem tươi', available: true },
-                { id: 6, name: 'Bánh Tiramisu Truyền Thống', cat: 'Bánh Ngọt', sku: 'CAKE-TIRA', price: 40000, img: '🍰', desc: 'Cacao Bỉ và rượu rum thơm', available: true }
+                { id: 1, name: 'Cà Phê Muối Đặc Biệt', cat: 'Cà Phê', sku: 'CF-SALT', price: 35000, img: '☕', desc: 'Kem muối béo mặn sánh mịn', available: true, allowTopping: false, allowedToppings: [] },
+                { id: 2, name: 'Trà Sen Vàng Hạt Dẻ', cat: 'Trà & Macchiato', sku: 'TEA-LOTUS', price: 45000, img: '🪷', desc: 'Hạt sen ninh nhừ bùi béo', available: true, allowTopping: true, allowedToppings: ['Trân Châu Trắng Thủy Tinh', 'Kem Phô Mai Cheese', 'Hạt Sen Bùi Béo'] },
+                { id: 3, name: 'Cà Phê Sữa Đá Sài Gòn', cat: 'Cà Phê', sku: 'CF-MILK', price: 29000, img: '🥤', desc: 'Robusta Buôn Ma Thuột đậm vị', available: true, allowTopping: false, allowedToppings: [] },
+                { id: 4, name: 'Trà Đào Cam Sả Tươi', cat: 'Trà & Macchiato', sku: 'TEA-PEACH', price: 42000, img: '🍑', desc: 'Miếng đào giòn ngọt thanh', available: true, allowTopping: true, allowedToppings: ['Trân Châu Trắng Thủy Tinh', 'Thạch Đào Giòn', 'Kem Phô Mai Cheese'] },
+                { id: 5, name: 'Matcha Đá Xay Hạnh Nhân', cat: 'Đá Xay - Freeze', sku: 'ICE-MATCHA', price: 48000, img: '🍃', desc: 'Matcha Uji phủ kem tươi', available: true, allowTopping: true, allowedToppings: ['Trân Châu Trắng Thủy Tinh', 'Kem Phô Mai Cheese'] },
+                { id: 6, name: 'Bánh Tiramisu Truyền Thống', cat: 'Bánh Ngọt', sku: 'CAKE-TIRA', price: 40000, img: '🍰', desc: 'Cacao Bỉ và rượu rum thơm', available: true, allowTopping: false, allowedToppings: [] }
             ];
             localStorage.setItem('admin_store_menu', JSON.stringify(storeMenu));
+        } else {
+            // Tự động tương thích ngược cho dữ liệu cũ nếu chưa có cờ allowTopping
+            let changed = false;
+            storeMenu.forEach(m => {
+                if (m.allowTopping === undefined) {
+                    m.allowTopping = (m.cat === 'Trà & Macchiato' || m.cat === 'Đá Xay - Freeze');
+                    m.allowedToppings = m.allowTopping ? ['Trân Châu Trắng Thủy Tinh', 'Kem Phô Mai Cheese'] : [];
+                    changed = true;
+                }
+            });
+            if (changed) {
+                localStorage.setItem('admin_store_menu', JSON.stringify(storeMenu));
+            }
         }
 
         let storeStaff = JSON.parse(localStorage.getItem('admin_store_staff') || 'null');
-        if (!storeStaff) {
+        if (!storeStaff || !Array.isArray(storeStaff) || storeStaff.length === 0) {
             storeStaff = [
-                { id: 1, name: 'Lê Hữu Nghĩa', role: 'Manager', phone: '0901 112 222', pin: '8888', status: 'active' },
-                { id: 2, name: 'Trần Thu Ngân', role: 'Cashier', phone: '0908 888 777', pin: '1234', status: 'active' },
-                { id: 3, name: 'Hoàng Nhân Order', role: 'Waiter', phone: '0905 555 666', pin: '2345', status: 'active' },
-                { id: 4, name: 'Nguyễn Văn Barista', role: 'Barista', phone: '0912 333 444', pin: '3456', status: 'active' }
+                { id: 1, name: 'Lê Hữu Nghĩa', username: 'manager', role: 'Manager', phone: '0901 112 222', pin: '8888', status: 'active' },
+                { id: 2, name: 'Trần Thu Ngân', username: 'cashier', role: 'Cashier', phone: '0908 888 777', pin: '1234', status: 'active' },
+                { id: 3, name: 'Hoàng Nhân Order', username: 'waiter', role: 'Waiter', phone: '0905 555 666', pin: '2345', status: 'active' },
+                { id: 4, name: 'Nguyễn Văn Barista', username: 'barista', role: 'Barista', phone: '0912 333 444', pin: '3456', status: 'active' }
             ];
             localStorage.setItem('admin_store_staff', JSON.stringify(storeStaff));
+        } else {
+            // Tự động bổ sung username cho nhân viên cũ nếu thiếu
+            let updated = false;
+            storeStaff.forEach(s => {
+                if (!s.username) {
+                    if (s.role === 'Manager') s.username = 'manager';
+                    else if (s.role === 'Cashier') s.username = 'cashier';
+                    else if (s.role === 'Waiter') s.username = 'waiter';
+                    else if (s.role === 'Barista') s.username = 'barista';
+                    else s.username = (s.phone ? s.phone.replace(/\D/g, '') : ('nv_' + s.id));
+                    updated = true;
+                }
+            });
+            if (updated) {
+                localStorage.setItem('admin_store_staff', JSON.stringify(storeStaff));
+            }
         }
 
         let activeInvoiceCode = null;
         let MAX_TABLES_ALLOWED = 30; // Quota Pro Plan
+
+        function toggleStoreSidebar(show) {
+            const sidebar = document.getElementById('store-sidebar');
+            const overlay = document.getElementById('store-sidebar-overlay');
+            if (!sidebar || !overlay) return;
+            if (show) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        }
 
         function switchStoreTab(tabId, btn) {
             document.querySelectorAll('.tab-view').forEach(t => t.classList.remove('active'));
@@ -670,6 +969,9 @@
             });
             document.getElementById(`view-${tabId}`).classList.add('active');
             btn.className = 'nav-item active w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-black transition-all';
+
+            // Đóng menu di động sau khi chọn tab
+            toggleStoreSidebar(false);
 
             if (tabId === 'invoices') {
                 refreshInvoicesList();
@@ -795,20 +1097,35 @@
             const tbody = document.getElementById('store-menu-body');
             tbody.innerHTML = storeMenu.map(m => {
                 const isImage = m.img && (m.img.startsWith('http') || m.img.startsWith('data:'));
+                const hasToppings = m.allowTopping === true;
+                const toppingsCount = (m.allowedToppings && m.allowedToppings.length > 0) ? m.allowedToppings.length : (hasToppings ? storeToppings.length : 0);
+
                 return `
                     <tr class="hover:bg-slate-850/50 transition-colors">
                         <td class="py-3 px-5 font-bold text-white flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
-                                ${isImage ? `<img src="${m.img}" alt="${m.name}" class="w-full h-full object-cover">` : `<span class="text-xl">${m.img || '☕'}</span>`}
+                            <div class="w-11 h-11 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
+                                ${isImage ? `<img src="${m.img}" alt="${m.name}" class="w-full h-full object-cover">` : `<span class="text-2xl">${m.img || '☕'}</span>`}
                             </div>
                             <div>
                                 <div class="font-extrabold text-white text-xs">${m.name}</div>
-                                <div class="text-[10px] text-slate-400">${m.desc || ''}</div>
+                                <div class="text-[10px] text-slate-400 line-clamp-1">${m.desc || ''}</div>
                             </div>
                         </td>
                         <td class="py-3 px-4 text-slate-300 font-semibold">${m.cat}</td>
-                        <td class="py-3 px-4 font-mono text-slate-400">${m.sku}</td>
+                        <td class="py-3 px-4 font-mono text-slate-400 text-[11px]">${m.sku}</td>
                         <td class="py-3 px-4 font-mono font-bold text-amber-400">${new Intl.NumberFormat('vi-VN').format(m.price)} đ</td>
+                        <td class="py-3 px-4">
+                            ${hasToppings ? `
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1 w-fit" title="${(m.allowedToppings || []).join(', ') || 'Tất cả topping'}">
+                                    <span>🧋</span>
+                                    <span>Có Topping (${toppingsCount})</span>
+                                </span>
+                            ` : `
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold text-slate-400 bg-slate-800/80 border border-slate-700/60">
+                                    ✕ Không có Topping
+                                </span>
+                            `}
+                        </td>
                         <td class="py-3 px-4">
                             <span class="px-2 py-0.5 rounded-full text-[10px] font-black ${
                                 m.available ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'
@@ -816,9 +1133,9 @@
                                 ${m.available ? '✓ Đang bán' : 'Tạm ngưng'}
                             </span>
                         </td>
-                        <td class="py-3 px-5 text-right space-x-1.5">
+                        <td class="py-3 px-5 text-right space-x-1.5 whitespace-nowrap">
                             <button onclick="openEditMenuModal(${m.id})" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 font-bold text-[11px] transition-all">
-                                ✏️ Sửa & Đổi ảnh
+                                ✏️ Sửa món
                             </button>
                             <button onclick="deleteMenuItem(${m.id})" class="px-2.5 py-1 rounded-lg bg-rose-950/40 hover:bg-rose-900 text-rose-400 border border-rose-800/50 font-bold text-[11px] transition-all">
                                 🗑️ Xóa
@@ -829,14 +1146,182 @@
             }).join('');
         }
 
+        // ==========================================
+        // XỬ LÝ UPLOAD HÌNH ẢNH MÓN (NÉN CLIENT-SIDE BẰNG CANVAS)
+        // ==========================================
+        function handleMenuImageUpload(input) {
+            const file = input.files && input.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                alert('Vui lòng chọn tệp hình ảnh hợp lệ (PNG, JPG, JPEG, WebP)!');
+                input.value = '';
+                return;
+            }
+
+            const statusEl = document.getElementById('img-upload-status');
+            if (statusEl) statusEl.textContent = '⏳ Đang tối ưu ảnh...';
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    // Tự động thu nhỏ ảnh về kích thước tối đa 400x400 để tiết kiệm dung lượng LocalStorage
+                    const maxDim = 400;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > maxDim || height > maxDim) {
+                        if (width > height) {
+                            height = Math.round((height * maxDim) / width);
+                            width = maxDim;
+                        } else {
+                            width = Math.round((width * maxDim) / height);
+                            height = maxDim;
+                        }
+                    }
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const optimizedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                    document.getElementById('menu-img-url').value = optimizedDataUrl;
+                    updateMenuImgPreview();
+
+                    const kb = Math.round(optimizedDataUrl.length / 1024);
+                    if (statusEl) statusEl.textContent = `✓ Đã nén nhẹ (${kb} KB)`;
+                    showToast('✓ Đã tải và tối ưu hình ảnh thành công!', 'success');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearMenuImage() {
+            document.getElementById('menu-img-url').value = '☕';
+            const fileInput = document.getElementById('menu-file-input');
+            if (fileInput) fileInput.value = '';
+            const statusEl = document.getElementById('img-upload-status');
+            if (statusEl) statusEl.textContent = '';
+            updateMenuImgPreview();
+        }
+
+        function setPresetImg(emoji) {
+            document.getElementById('menu-img-url').value = emoji;
+            const fileInput = document.getElementById('menu-file-input');
+            if (fileInput) fileInput.value = '';
+            const statusEl = document.getElementById('img-upload-status');
+            if (statusEl) statusEl.textContent = '';
+            updateMenuImgPreview();
+        }
+
+        function updateMenuImgPreview() {
+            const val = document.getElementById('menu-img-url').value.trim() || '☕';
+            const preview = document.getElementById('menu-img-preview');
+            const btnRemove = document.getElementById('btn-remove-img');
+            const isImage = val.startsWith('http') || val.startsWith('data:');
+
+            if (isImage) {
+                preview.innerHTML = `
+                    <img src="${val}" alt="Preview" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-[10px] font-bold text-amber-400 transition-opacity">
+                        <span>📷</span>
+                        <span>Đổi ảnh</span>
+                    </div>
+                `;
+                if (btnRemove) btnRemove.classList.remove('hidden');
+            } else {
+                preview.innerHTML = `
+                    <span class="text-3xl">${val}</span>
+                    <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-[10px] font-bold text-amber-400 transition-opacity">
+                        <span>📷</span>
+                        <span>Đổi ảnh</span>
+                    </div>
+                `;
+                if (btnRemove) btnRemove.classList.add('hidden');
+            }
+        }
+
+        // ==========================================
+        // CẤU HÌNH TOPPING CHO MÓN (CHỦ QUÁN CHỌN)
+        // ==========================================
+        function onCategoryChange() {
+            const cat = document.getElementById('menu-cat-input').value;
+            const allowCheckbox = document.getElementById('menu-allow-topping');
+            
+            // Nếu chọn Cà Phê hoặc Bánh Ngọt: mặc định tắt topping để bảo đảm không mặc định
+            if (cat === 'Cà Phê' || cat === 'Bánh Ngọt') {
+                allowCheckbox.checked = false;
+                toggleToppingSelectionArea();
+            }
+        }
+
+        function toggleToppingSelectionArea() {
+            const allow = document.getElementById('menu-allow-topping').checked;
+            const container = document.getElementById('topping-selection-container');
+            if (allow) {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        function renderToppingCheckboxes(selectedNames = []) {
+            const container = document.getElementById('modal-toppings-checkboxes');
+            if (!container) return;
+
+            if (storeToppings.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-2 text-center text-slate-500 py-3 text-[11px]">
+                        Chưa có loại topping nào. Vui lòng bấm "Quản Lý Topping Quán" để thêm.
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = storeToppings.map(t => {
+                const isChecked = selectedNames.includes(t.name);
+                return `
+                    <label class="flex items-center justify-between p-2 rounded-xl bg-slate-800/90 border border-slate-700/80 hover:border-amber-500/40 cursor-pointer transition-all">
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" value="${t.name}" class="menu-item-topping-chk w-4 h-4 accent-amber-500 rounded" ${isChecked ? 'checked' : ''}>
+                            <span class="text-slate-200 font-medium text-[11px]">${t.name}</span>
+                        </div>
+                        <span class="text-amber-400 font-mono text-[10px] font-bold">+${new Intl.NumberFormat('vi-VN').format(t.price)}đ</span>
+                    </label>
+                `;
+            }).join('');
+        }
+
+        function selectAllItemToppings(select) {
+            document.querySelectorAll('.menu-item-topping-chk').forEach(c => {
+                c.checked = select;
+            });
+        }
+
         function openAddMenuModal() {
             document.getElementById('modal-menu-title').textContent = 'Thêm Món Mới';
             document.getElementById('menu-edit-id').value = '';
             document.getElementById('menu-name-input').value = '';
+            document.getElementById('menu-cat-input').value = 'Cà Phê';
             document.getElementById('menu-sku-input').value = 'SKU-' + Math.floor(100 + Math.random() * 900);
             document.getElementById('menu-price-input').value = '';
             document.getElementById('menu-desc-input').value = '';
             document.getElementById('menu-img-url').value = '☕';
+            
+            const fileInput = document.getElementById('menu-file-input');
+            if (fileInput) fileInput.value = '';
+            const statusEl = document.getElementById('img-upload-status');
+            if (statusEl) statusEl.textContent = '';
+            
+            // MẶC ĐỊNH LÀ TẮT TOPPING (Đặc biệt cà phê không cần topping)
+            document.getElementById('menu-allow-topping').checked = false;
+            toggleToppingSelectionArea();
+            renderToppingCheckboxes([]);
+
             updateMenuImgPreview();
             document.getElementById('modal-menu').classList.remove('hidden');
         }
@@ -845,7 +1330,7 @@
             const item = storeMenu.find(m => m.id === id);
             if (!item) return;
 
-            document.getElementById('modal-menu-title').textContent = `Chỉnh Sửa: ${item.name}`;
+            document.getElementById('modal-menu-title').textContent = `Chỉnh Sửa Món: ${item.name}`;
             document.getElementById('menu-edit-id').value = item.id;
             document.getElementById('menu-name-input').value = item.name;
             document.getElementById('menu-cat-input').value = item.cat;
@@ -854,27 +1339,26 @@
             document.getElementById('menu-desc-input').value = item.desc || '';
             document.getElementById('menu-status-input').value = item.available ? 'true' : 'false';
             document.getElementById('menu-img-url').value = item.img || '☕';
+            
+            const fileInput = document.getElementById('menu-file-input');
+            if (fileInput) fileInput.value = '';
+            const statusEl = document.getElementById('img-upload-status');
+            if (statusEl) statusEl.textContent = '';
+
+            // Trạng thái Topping
+            const allow = item.allowTopping === true;
+            document.getElementById('menu-allow-topping').checked = allow;
+            toggleToppingSelectionArea();
+            
+            const selectedToppings = Array.isArray(item.allowedToppings) ? item.allowedToppings : (allow ? storeToppings.map(t => t.name) : []);
+            renderToppingCheckboxes(selectedToppings);
+
             updateMenuImgPreview();
             document.getElementById('modal-menu').classList.remove('hidden');
         }
 
         function closeMenuModal() {
             document.getElementById('modal-menu').classList.add('hidden');
-        }
-
-        function setPresetImg(emoji) {
-            document.getElementById('menu-img-url').value = emoji;
-            updateMenuImgPreview();
-        }
-
-        function updateMenuImgPreview() {
-            const val = document.getElementById('menu-img-url').value.trim() || '☕';
-            const preview = document.getElementById('menu-img-preview');
-            if (val.startsWith('http') || val.startsWith('data:')) {
-                preview.innerHTML = `<img src="${val}" alt="Preview" class="w-full h-full object-cover">`;
-            } else {
-                preview.innerHTML = `<span class="text-3xl">${val}</span>`;
-            }
         }
 
         function saveMenuForm() {
@@ -886,6 +1370,19 @@
             const desc = document.getElementById('menu-desc-input').value.trim();
             const available = document.getElementById('menu-status-input').value === 'true';
             const img = document.getElementById('menu-img-url').value.trim() || '☕';
+
+            // Topping Configuration
+            const allowTopping = document.getElementById('menu-allow-topping').checked;
+            let allowedToppings = [];
+            if (allowTopping) {
+                document.querySelectorAll('.menu-item-topping-chk:checked').forEach(c => {
+                    allowedToppings.push(c.value);
+                });
+                // Nếu chủ quán bật Topping nhưng chưa tích ô nào, mặc định cho phép tất cả các topping của quán
+                if (allowedToppings.length === 0) {
+                    allowedToppings = storeToppings.map(t => t.name);
+                }
+            }
 
             if (!name || isNaN(price) || price <= 0) {
                 alert('Vui lòng nhập Tên món và Đơn giá hợp lệ!');
@@ -902,7 +1399,9 @@
                     item.desc = desc;
                     item.available = available;
                     item.img = img;
-                    showToast(`✓ Đã cập nhật món "${name}" và hình ảnh mới!`, 'success');
+                    item.allowTopping = allowTopping;
+                    item.allowedToppings = allowedToppings;
+                    showToast(`✓ Đã cập nhật món "${name}" thành công!`, 'success');
                 }
             } else {
                 storeMenu.push({
@@ -913,12 +1412,20 @@
                     price: price,
                     desc: desc,
                     available: available,
-                    img: img
+                    img: img,
+                    allowTopping: allowTopping,
+                    allowedToppings: allowedToppings
                 });
                 showToast(`✓ Đã thêm món mới: "${name}"`, 'success');
             }
 
             localStorage.setItem('admin_store_menu', JSON.stringify(storeMenu));
+
+            // Bắn tín hiệu đồng bộ Real-time sang POS & Waiter Order
+            if (syncChannel) {
+                syncChannel.postMessage({ type: 'MENU_UPDATED', timestamp: Date.now() });
+            }
+
             closeMenuModal();
             renderMenu();
         }
@@ -930,44 +1437,209 @@
             if (confirm(`Bạn có chắc muốn xóa món "${item.name}" khỏi thực đơn?`)) {
                 storeMenu = storeMenu.filter(m => m.id !== id);
                 localStorage.setItem('admin_store_menu', JSON.stringify(storeMenu));
+                
+                if (syncChannel) {
+                    syncChannel.postMessage({ type: 'MENU_UPDATED', timestamp: Date.now() });
+                }
+
                 renderMenu();
                 showToast(`✓ Đã xóa món "${item.name}"`, 'info');
             }
         }
 
         // ==========================================
+        // 2.1 QUẢN LÝ DANH SÁCH TOPPING QUÁN
+        // ==========================================
+        function openToppingManagerModal() {
+            renderToppingsManager();
+            document.getElementById('modal-toppings-manager').classList.remove('hidden');
+        }
+
+        function closeToppingManagerModal() {
+            document.getElementById('modal-toppings-manager').classList.add('hidden');
+            // Cập nhật lại danh sách topping trong modal chỉnh sửa nếu đang mở
+            renderMenu();
+        }
+
+        function renderToppingsManager() {
+            const listEl = document.getElementById('toppings-manager-list');
+            const badgeEl = document.getElementById('toppings-count-badge');
+            badgeEl.textContent = `${storeToppings.length} loại`;
+
+            if (storeToppings.length === 0) {
+                listEl.innerHTML = `<div class="p-4 text-center text-slate-500 text-xs">Chưa có topping nào. Nhập tên và giá để thêm mới.</div>`;
+                return;
+            }
+
+            listEl.innerHTML = storeToppings.map(t => `
+                <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-800/90 border border-slate-700/80 hover:border-slate-600 transition-colors">
+                    <div class="flex items-center gap-2">
+                        <span class="text-base">🧋</span>
+                        <div>
+                            <span class="font-bold text-white text-xs block">${t.name}</span>
+                            <span class="font-mono text-amber-400 font-bold text-[11px]">+${new Intl.NumberFormat('vi-VN').format(t.price)} đ</span>
+                        </div>
+                    </div>
+                    <button type="button" onclick="deleteStoreTopping('${t.id}')" class="px-2 py-1 rounded-lg bg-rose-950/40 hover:bg-rose-900 border border-rose-800/50 text-rose-400 font-bold text-[10px] transition-all">
+                        🗑️ Xóa
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function addNewStoreTopping() {
+            const nameInput = document.getElementById('new-topping-name');
+            const priceInput = document.getElementById('new-topping-price');
+            const name = nameInput.value.trim();
+            const price = parseInt(priceInput.value, 10);
+
+            if (!name) {
+                alert('Vui lòng nhập tên topping!');
+                return;
+            }
+            if (isNaN(price) || price < 0) {
+                alert('Vui lòng nhập đơn giá topping hợp lệ!');
+                return;
+            }
+
+            const exists = storeToppings.some(t => t.name.toLowerCase() === name.toLowerCase());
+            if (exists) {
+                alert('Topping này đã có trong danh sách!');
+                return;
+            }
+
+            storeToppings.push({
+                id: 'top-' + Date.now(),
+                name: name,
+                price: price
+            });
+
+            localStorage.setItem('admin_store_toppings', JSON.stringify(storeToppings));
+            nameInput.value = '';
+            priceInput.value = '';
+            renderToppingsManager();
+            showToast(`✓ Đã thêm topping "${name}" (+${new Intl.NumberFormat('vi-VN').format(price)}đ)`, 'success');
+
+            if (syncChannel) {
+                syncChannel.postMessage({ type: 'TOPPINGS_UPDATED', timestamp: Date.now() });
+            }
+        }
+
+        function deleteStoreTopping(id) {
+            const topping = storeToppings.find(t => t.id === id);
+            if (!topping) return;
+
+            if (confirm(`Bạn có chắc chắn muốn xóa topping "${topping.name}"?`)) {
+                storeToppings = storeToppings.filter(t => t.id !== id);
+                localStorage.setItem('admin_store_toppings', JSON.stringify(storeToppings));
+                renderToppingsManager();
+                showToast(`✓ Đã xóa topping "${topping.name}"`, 'info');
+
+                if (syncChannel) {
+                    syncChannel.postMessage({ type: 'TOPPINGS_UPDATED', timestamp: Date.now() });
+                }
+            }
+        }
+
+        // ==========================================
         // 3. CHỨC NĂNG NHÂN VIÊN & PHÂN QUYỀN
         // ==========================================
+        let currentActiveCredentialStaff = null;
+
+        function removeVietnameseTones(str) {
+            if (!str) return '';
+            return str.normalize('NFD')
+                      .replace(/[\u0300-\u036f]/g, '')
+                      .replace(/đ/g, 'd').replace(/Đ/g, 'D')
+                      .toLowerCase()
+                      .replace(/[^a-z0-9]/g, '');
+        }
+
+        function getStaffRoleDetails(role) {
+            const r = role || 'Waiter';
+            if (r === 'Cashier') {
+                return {
+                    badge: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40',
+                    title: '💻 Thu Ngân POS',
+                    screen: 'pos.html',
+                    screenName: 'pos.html (Quầy Thu Ngân Bán Hàng & In Bill)'
+                };
+            } else if (r === 'Waiter') {
+                return {
+                    badge: 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40',
+                    title: '📱 Nhân Viên Order',
+                    screen: 'waiter-order.html',
+                    screenName: 'waiter-order.html (Order Tại Bàn trên Điện Thoại)'
+                };
+            } else if (r === 'Barista') {
+                return {
+                    badge: 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40',
+                    title: '🍹 Quầy Pha Chế',
+                    screen: 'barista.html',
+                    screenName: 'barista.html (Màn hình Điều Phối Chế Biến KDS)'
+                };
+            } else {
+                return {
+                    badge: 'bg-amber-500/20 text-amber-300 border border-amber-500/40',
+                    title: '👑 Quản Lý Ca / Admin',
+                    screen: 'store-admin-dashboard.html',
+                    screenName: 'store-admin-dashboard.html (Quản Trị Quán Toàn Diện)'
+                };
+            }
+        }
+
         function renderStaff() {
             const tbody = document.getElementById('store-staff-body');
             tbody.innerHTML = storeStaff.map(s => {
-                let roleBadge = 'bg-slate-700 text-slate-300';
-                let roleTitle = s.role;
-                if (s.role === 'Manager') { roleBadge = 'bg-amber-500/20 text-amber-300 border border-amber-500/40'; roleTitle = '👑 Quản Lý Ca / Admin'; }
-                else if (s.role === 'Cashier') { roleBadge = 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'; roleTitle = '💻 Thu Ngân (Chỉ POS)'; }
-                else if (s.role === 'Waiter') { roleBadge = 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40'; roleTitle = '📱 Order Tại Bàn (Mobile)'; }
-                else if (s.role === 'Barista') { roleBadge = 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'; roleTitle = '🍹 Pha Chế (Chỉ KDS)'; }
+                const details = getStaffRoleDetails(s.role);
+                const usernameDisplay = s.username || s.phone || ('nv_' + s.id);
 
                 return `
                     <tr class="hover:bg-slate-850/50 transition-colors">
-                        <td class="py-3 px-5 font-bold text-white">${s.name}</td>
+                        <td class="py-3 px-5">
+                            <div class="font-bold text-white text-xs flex items-center gap-1.5">
+                                <span>${s.name}</span>
+                                ${s.role === 'Manager' ? '<span class="text-amber-400 text-[10px]" title="Chủ Quán / Quản Lý Ca">👑</span>' : ''}
+                            </div>
+                            <div class="text-[11px] font-mono text-amber-400 font-semibold mt-0.5 flex items-center gap-1">
+                                <span class="text-slate-500 font-normal">user:</span>
+                                <span class="bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700/60">@${usernameDisplay}</span>
+                            </div>
+                        </td>
                         <td class="py-3 px-4">
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-black ${roleBadge}">
-                                ${roleTitle}
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-black ${details.badge}">
+                                ${details.title}
+                            </span>
+                            <div class="text-[10px] text-slate-500 font-mono mt-0.5">
+                                ➔ ${details.screen}
+                            </div>
+                        </td>
+                        <td class="py-3 px-4 font-mono text-slate-300 text-xs">${s.phone}</td>
+                        <td class="py-3 px-4">
+                            <div class="inline-flex items-center gap-1.5 font-mono">
+                                <span id="pin-display-${s.id}" class="text-amber-400 font-bold bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-xs tracking-wider">••••</span>
+                                <button type="button" onclick="toggleRowPin(${s.id}, '${s.pin || '1234'}')" title="Ẩn/Hiện PIN" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white text-xs border border-slate-700 transition-all">
+                                    👁️
+                                </button>
+                            </div>
+                        </td>
+                        <td class="py-3 px-4">
+                            <span class="text-emerald-400 font-bold text-[10px] flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+                                Hoạt động
                             </span>
                         </td>
-                        <td class="py-3 px-4 font-mono text-slate-400">${s.phone}</td>
-                        <td class="py-3 px-4 font-mono text-slate-400">••••</td>
-                        <td class="py-3 px-4">
-                            <span class="text-emerald-400 font-bold text-[10px]">✓ Hoạt động</span>
-                        </td>
                         <td class="py-3 px-5 text-right space-x-1.5">
-                            <button onclick="openEditStaffModal(${s.id})" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 font-bold text-[11px] transition-all">
-                                ✏️ Sửa & PIN
+                            <button onclick="openCredentialsModal(${s.id})" title="Xem và sao chép thông tin đăng nhập gửi cho nhân viên" class="px-2.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-[11px] shadow-sm transition-all inline-flex items-center gap-1">
+                                <span>📋</span>
+                                <span>Cấp Info</span>
+                            </button>
+                            <button onclick="openEditStaffModal(${s.id})" title="Chỉnh sửa thông tin và mã PIN" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 font-bold text-[11px] transition-all">
+                                ✏️ Sửa
                             </button>
                             ${s.role !== 'Manager' ? `
-                            <button onclick="deleteStaff(${s.id})" class="px-2.5 py-1 rounded-lg bg-rose-950/40 hover:bg-rose-900 text-rose-400 border border-rose-800/50 font-bold text-[11px] transition-all">
-                                🗑️ Xóa
+                            <button onclick="deleteStaff(${s.id})" title="Xóa nhân viên" class="px-2 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900 text-rose-400 border border-rose-800/50 font-bold text-[11px] transition-all">
+                                🗑️
                             </button>` : ''}
                         </td>
                     </tr>
@@ -979,8 +1651,13 @@
             document.getElementById('modal-staff-title').textContent = 'Thêm Nhân Sự Mới';
             document.getElementById('staff-edit-id').value = '';
             document.getElementById('staff-name-input').value = '';
+            document.getElementById('staff-role-input').value = 'Cashier';
             document.getElementById('staff-phone-input').value = '';
+            document.getElementById('staff-username-input').value = '';
+            document.getElementById('staff-username-input').dataset.userEdited = 'false';
             document.getElementById('staff-pin-input').value = '1234';
+            document.getElementById('staff-pin-input').type = 'password';
+            onStaffRoleChange();
             document.getElementById('modal-staff').classList.remove('hidden');
         }
 
@@ -993,7 +1670,11 @@
             document.getElementById('staff-name-input').value = staff.name;
             document.getElementById('staff-role-input').value = staff.role;
             document.getElementById('staff-phone-input').value = staff.phone;
+            document.getElementById('staff-username-input').value = staff.username || '';
+            document.getElementById('staff-username-input').dataset.userEdited = 'true';
             document.getElementById('staff-pin-input').value = staff.pin || '1234';
+            document.getElementById('staff-pin-input').type = 'password';
+            onStaffRoleChange();
             document.getElementById('modal-staff').classList.remove('hidden');
         }
 
@@ -1001,14 +1682,81 @@
             document.getElementById('modal-staff').classList.add('hidden');
         }
 
+        function onStaffRoleChange() {
+            const role = document.getElementById('staff-role-input').value;
+            const hint = document.getElementById('staff-screen-hint');
+            if (!hint) return;
+            const details = getStaffRoleDetails(role);
+            hint.innerHTML = `${details.title}: Màn hình làm việc <strong>${details.screen}</strong>`;
+        }
+
+        function onStaffNameOrPhoneChange() {
+            const editId = document.getElementById('staff-edit-id').value;
+            const userInp = document.getElementById('staff-username-input');
+            if (!editId && (!userInp.dataset.userEdited || userInp.dataset.userEdited === 'false')) {
+                const name = document.getElementById('staff-name-input').value.trim();
+                const phone = document.getElementById('staff-phone-input').value.replace(/\D/g, '');
+                const cleanName = removeVietnameseTones(name);
+                if (cleanName) {
+                    userInp.value = cleanName + (phone ? phone.slice(-4) : '');
+                } else if (phone) {
+                    userInp.value = 'nv_' + phone.slice(-6);
+                }
+            }
+        }
+
+        // Lắng nghe khi người dùng tự gõ username
+        document.addEventListener('DOMContentLoaded', () => {
+            const uInp = document.getElementById('staff-username-input');
+            if (uInp) {
+                uInp.addEventListener('input', () => {
+                    uInp.dataset.userEdited = 'true';
+                });
+            }
+        });
+
+        function generateRandomPin() {
+            const randomPin = Math.floor(1000 + Math.random() * 9000).toString();
+            const pinInp = document.getElementById('staff-pin-input');
+            pinInp.value = randomPin;
+            pinInp.type = 'text';
+            showToast(`🎲 Đã tạo mã PIN ngẫu nhiên: ${randomPin}`, 'info');
+        }
+
+        function togglePinVisibility() {
+            const pinInp = document.getElementById('staff-pin-input');
+            pinInp.type = pinInp.type === 'password' ? 'text' : 'password';
+        }
+
+        function toggleRowPin(id, pin) {
+            const el = document.getElementById(`pin-display-${id}`);
+            if (!el) return;
+            if (el.textContent === '••••') {
+                el.textContent = pin;
+                el.classList.add('text-amber-300', 'bg-amber-500/10', 'border-amber-500/40');
+            } else {
+                el.textContent = '••••';
+                el.classList.remove('text-amber-300', 'bg-amber-500/10', 'border-amber-500/40');
+            }
+        }
+
         function saveStaffForm() {
             const editId = document.getElementById('staff-edit-id').value;
             const name = document.getElementById('staff-name-input').value.trim();
             const role = document.getElementById('staff-role-input').value;
             const phone = document.getElementById('staff-phone-input').value.trim() || '0900 000 000';
-            const pin = document.getElementById('staff-pin-input').value.trim() || '1234';
+            let username = document.getElementById('staff-username-input').value.trim().toLowerCase().replace(/[@\s]/g, '');
+            let pin = document.getElementById('staff-pin-input').value.trim() || '1234';
 
             if (!name) return alert('Vui lòng nhập tên nhân viên!');
+            if (!username) {
+                username = removeVietnameseTones(name) || ('nv_' + Date.now().toString().slice(-4));
+            }
+            if (pin.length !== 4) {
+                pin = pin.padStart(4, '0').slice(-4);
+            }
+
+            let savedStaff = null;
 
             if (editId) {
                 const staff = storeStaff.find(s => s.id === parseInt(editId, 10));
@@ -1016,24 +1764,51 @@
                     staff.name = name;
                     staff.role = role;
                     staff.phone = phone;
+                    staff.username = username;
                     staff.pin = pin;
+                    savedStaff = staff;
                     showToast(`✓ Đã cập nhật nhân viên "${name}" (${role})`, 'success');
                 }
             } else {
-                storeStaff.push({
+                const newStaff = {
                     id: Date.now(),
                     name: name,
+                    username: username,
                     role: role,
                     phone: phone,
                     pin: pin,
                     status: 'active'
-                });
+                };
+                storeStaff.push(newStaff);
+                savedStaff = newStaff;
                 showToast(`✓ Đã cấp tài khoản cho nhân sự mới: "${name}"`, 'success');
             }
 
             localStorage.setItem('admin_store_staff', JSON.stringify(storeStaff));
             closeStaffModal();
             renderStaff();
+
+            // Đồng bộ qua BroadcastChannel
+            try {
+                const bus = new BroadcastChannel('pos_system_bus');
+                bus.postMessage({ type: 'STAFF_UPDATED', staff: storeStaff });
+            } catch (e) {}
+
+            // Gửi nền API nếu có server backend
+            try {
+                fetch('/api/staff', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(savedStaff)
+                }).catch(() => {});
+            } catch (e) {}
+
+            // Tự động mở cửa sổ thông tin đăng nhập cấp cho nhân viên ngay lập tức!
+            if (savedStaff) {
+                setTimeout(() => {
+                    openCredentialsModal(savedStaff.id);
+                }, 200);
+            }
         }
 
         function deleteStaff(id) {
@@ -1045,7 +1820,96 @@
                 localStorage.setItem('admin_store_staff', JSON.stringify(storeStaff));
                 renderStaff();
                 showToast(`✓ Đã xóa tài khoản "${staff.name}"`, 'info');
+
+                try {
+                    fetch(`/api/staff/${id}`, { method: 'DELETE' }).catch(() => {});
+                } catch (e) {}
             }
+        }
+
+        function openCredentialsModal(id) {
+            const staff = storeStaff.find(s => s.id === id);
+            if (!staff) return;
+
+            currentActiveCredentialStaff = staff;
+            const details = getStaffRoleDetails(staff.role);
+
+            document.getElementById('cred-name').textContent = staff.name;
+            const badge = document.getElementById('cred-role-badge');
+            badge.className = `px-2.5 py-0.5 rounded-full text-[10px] font-black ${details.badge}`;
+            badge.textContent = details.title;
+
+            document.getElementById('cred-username').textContent = '@' + (staff.username || staff.phone);
+            document.getElementById('cred-phone-note').textContent = `Hoặc đăng nhập bằng SĐT: ${staff.phone}`;
+            document.getElementById('cred-pin').textContent = staff.pin || '1234';
+            document.getElementById('cred-screen').textContent = details.screenName;
+
+            // Tính link đăng nhập đầy đủ
+            const loginUrl = window.location.href.split('store-admin-dashboard.html')[0] + 'login.html';
+            document.getElementById('cred-url').textContent = loginUrl;
+
+            document.getElementById('modal-staff-credentials').classList.remove('hidden');
+        }
+
+        function closeCredentialsModal() {
+            document.getElementById('modal-staff-credentials').classList.add('hidden');
+            currentActiveCredentialStaff = null;
+        }
+
+        function copyCredentialsToClipboard() {
+            if (!currentActiveCredentialStaff) return;
+            const s = currentActiveCredentialStaff;
+            const details = getStaffRoleDetails(s.role);
+            const loginUrl = window.location.href.split('store-admin-dashboard.html')[0] + 'login.html';
+            const directScreenUrl = window.location.href.split('store-admin-dashboard.html')[0] + details.screen;
+
+            const message = 
+`☕ THÔNG TIN TÀI KHOẢN ĐĂNG NHẬP CAFEMANAGER POS
+----------------------------------------
+👤 Nhân viên: ${s.name}
+💼 Vị trí: ${details.title}
+🔑 Tên đăng nhập: ${s.username || s.phone}
+📱 Số điện thoại: ${s.phone}
+⚡ Mã PIN 4 số (Đăng nhập nhanh): ${s.pin || '1234'}
+🌐 Link trang đăng nhập: ${loginUrl}
+📍 Màn hình làm việc trực tiếp: ${directScreenUrl}
+----------------------------------------
+👉 HƯỚNG DẪN ĐĂNG NHẬP CHO NHÂN VIÊN:
+• Cách 1 (Khuyên dùng - Cực nhanh): Mở link đăng nhập trên điện thoại hoặc máy POS, chọn "Mã PIN 4 số", bấm ${s.pin || '1234'} để vào thẳng ca làm việc!
+• Cách 2: Chọn "Tài khoản / Mật khẩu", nhập Tên đăng nhập "${s.username || s.phone}" (hoặc SĐT ${s.phone}) và mật khẩu là ${s.pin || '1234'}.
+(Lưu ý: Bạn được phân công truy cập màn hình ${details.screen}).`;
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(message).then(() => {
+                    showToast('✓ Đã sao chép thông tin! Hãy dán vào Zalo gửi cho nhân viên ngay.', 'success');
+                }).catch(() => {
+                    fallbackCopyText(message);
+                });
+            } else {
+                fallbackCopyText(message);
+            }
+        }
+
+        function fallbackCopyText(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand('copy');
+                showToast('✓ Đã sao chép thông tin! Hãy dán vào Zalo gửi cho nhân viên ngay.', 'success');
+            } catch (e) {
+                prompt('Vui lòng copy thủ công thông tin dưới đây:', text);
+            }
+            document.body.removeChild(ta);
+        }
+
+        function openStaffTargetScreen() {
+            if (!currentActiveCredentialStaff) return;
+            const details = getStaffRoleDetails(currentActiveCredentialStaff.role);
+            window.open(details.screen, '_blank');
         }
 
         // ==========================================
@@ -1188,6 +2052,15 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Check auth session
+            if (window.CafeAuth) {
+                const user = CafeAuth.getCurrentUser();
+                if (user) {
+                    const nameEl = document.getElementById('store-admin-user-name');
+                    if (nameEl) nameEl.innerHTML = `<span>👑 ${user.fullName || user.username}</span>`;
+                }
+            }
+
             renderTables();
             renderMenu();
             renderStaff();
@@ -1207,5 +2080,8 @@
             if (savedQr.bankName) document.getElementById('setting-bank-name').value = savedQr.bankName;
         });
     </script>
+
+    <!-- Auth Module JS -->
+    <script src="js/auth.js"></script>
 </body>
 </html>

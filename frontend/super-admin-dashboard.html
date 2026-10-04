@@ -2,7 +2,7 @@
 <html lang="vi" class="h-full bg-slate-950 text-slate-100">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Super Admin Platform - CafeManager SaaS Hub</title>
     <!-- Google Fonts: Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -36,6 +36,10 @@
         }
     </script>
     <style>
+        html, body {
+            height: 100dvh;
+            height: -webkit-fill-available;
+        }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
         ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.3); border-radius: 4px; }
@@ -43,24 +47,25 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
     </style>
+    <script src="js/auth.js"></script>
 </head>
-<body class="h-full font-sans antialiased bg-slate-950 text-slate-100 flex flex-col overflow-hidden">
+<body class="h-[100dvh] font-sans antialiased bg-slate-950 text-slate-100 flex flex-col overflow-hidden">
 
     <!-- Top Navigation Bar for SaaS Owner -->
-    <header class="h-16 px-6 bg-slate-900 border-b border-slate-800 flex items-center justify-between shrink-0 z-20">
-        <div class="flex items-center gap-4">
-            <a href="index.html" class="flex items-center gap-3 group">
-                <span class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xl shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-transform">👑</span>
+    <header class="h-16 px-4 sm:px-6 bg-slate-900 border-b border-slate-800 flex items-center justify-between shrink-0 z-20">
+        <div class="flex items-center gap-3 sm:gap-4">
+            <a href="index.html" class="flex items-center gap-2.5 sm:gap-3 group">
+                <span class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-lg sm:text-xl shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-transform">👑</span>
                 <div>
-                    <div class="flex items-center gap-2">
-                        <h1 class="text-sm font-extrabold text-white tracking-tight">CafeManager SaaS</h1>
-                        <span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 uppercase">Chủ App / Super Admin</span>
+                    <div class="flex items-center gap-1.5 sm:gap-2">
+                        <h1 class="text-xs sm:text-sm font-extrabold text-white tracking-tight">SaaS Hub</h1>
+                        <span class="text-[9px] font-black px-1.5 py-0.2 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 uppercase">SUPER ADMIN</span>
                     </div>
-                    <p class="text-[10px] text-slate-400">Trung Tâm Điều Hành B2B Đa Chi Nhánh</p>
+                    <p class="text-[10px] text-slate-400 hidden sm:block">Trung Tâm Điều Hành B2B Đa Chi Nhánh</p>
                 </div>
             </a>
 
-            <!-- Sub Nav Tabs -->
+            <!-- Sub Nav Tabs (Desktop) -->
             <nav class="hidden md:flex items-center gap-1.5 ml-6 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-bold">
                 <button onclick="switchTab('stores', this)" class="nav-tab active px-3.5 py-1.5 rounded-lg bg-indigo-600 text-white shadow-md shadow-indigo-600/30 flex items-center gap-1.5 transition-all">
                     <span>🏪 Danh Sách Quán (Stores)</span>
@@ -74,15 +79,29 @@
             </nav>
         </div>
 
-        <div class="flex items-center gap-3">
-            <button onclick="openCreatePlanModal()" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-600/30 flex items-center gap-1.5 transition-all">
-                <span>+ TẠO GÓI PLANS MỚI</span>
+        <div class="flex items-center gap-2">
+            <button onclick="openCreatePlanModal()" class="px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-600/30 flex items-center gap-1 transition-all">
+                <span>+ TẠO GÓI</span>
             </button>
-            <a href="store-admin-dashboard.html" title="Chuyển sang góc nhìn Chủ quán" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 font-bold text-xs transition-all flex items-center gap-1">
-                <span>🏪 Xem Store Admin</span> ➔
-            </a>
+            <div id="super-admin-user-chip"></div>
+            <button onclick="CafeAuth.logout('login.html')" title="Đăng xuất" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 border border-slate-700 text-xs font-bold flex items-center gap-1">
+                🚪 <span class="hidden sm:inline">Thoát</span>
+            </button>
         </div>
     </header>
+
+    <!-- Sub Nav Tabs (Mobile < md) -->
+    <nav class="md:hidden flex overflow-x-auto p-2 bg-slate-900 border-b border-slate-800 gap-1.5 text-xs font-bold shrink-0">
+        <button onclick="switchTab('stores', this)" class="nav-tab active px-3 py-1.5 rounded-lg bg-indigo-600 text-white flex items-center gap-1 whitespace-nowrap">
+            <span>🏪 Quán</span>
+        </button>
+        <button onclick="switchTab('plans', this)" class="nav-tab px-3 py-1.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-1 whitespace-nowrap">
+            <span>📦 Gói Plans</span>
+        </button>
+        <button onclick="switchTab('revenue', this)" class="nav-tab px-3 py-1.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-1 whitespace-nowrap">
+            <span>💳 Doanh Thu</span>
+        </button>
+    </nav>
 
     <!-- Main Content Body -->
     <main class="flex-1 overflow-y-auto p-6 lg:p-8 bg-slate-950">
@@ -322,6 +341,7 @@
     <!-- ========================================================================= -->
     <!-- SUPER ADMIN LOGIC JAVASCRIPT                                              -->
     <!-- ========================================================================= -->
+    <script src="js/auth.js"></script>
     <script>
         // Database Mock
         let plansData = [
@@ -623,6 +643,9 @@
         document.addEventListener('DOMContentLoaded', () => {
             renderStores();
             renderPlans();
+            if (window.CafeAuth) {
+                CafeAuth.renderUserHeader('super-admin-user-chip');
+            }
         });
     </script>
 </body>

@@ -34,6 +34,7 @@
         ::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.25); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(245, 158, 11, 0.5); }
     </style>
+    <script src="js/auth.js"></script>
 </head>
 <body class="h-full font-sans antialiased bg-slate-950 text-slate-100">
 
@@ -52,32 +53,24 @@
                         <p class="text-[11px] text-slate-400">Nền tảng Quản trị Chuỗi & Nhiều Quán</p>
                     </div>
                 </a>
-
-                <!-- Dual-Perspective Mode Toggle -->
-                <div class="hidden md:flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800">
-                    <button onclick="switchView('super')" id="tab-super" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-purple-600 text-white shadow-md shadow-purple-600/30 flex items-center gap-2">
-                        <span>🌐 Super Admin Portal</span>
-                    </button>
-                    <button onclick="switchView('store')" id="tab-store" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white flex items-center gap-2">
-                        <span>🏪 Store Admin (Chủ Quán)</span>
-                    </button>
-                </div>
             </div>
 
             <!-- Top Actions -->
             <div class="flex items-center gap-4">
-                <!-- Quick Link to POS -->
-                <a href="pos.html" class="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold transition-all">
-                    <span>Mở POS Thu Ngân</span>
-                    <span class="text-amber-400">→</span>
-                </a>
-
                 <!-- User Profile -->
-                <div class="flex items-center gap-3 pl-3 border-l border-slate-800">
-                    <div class="w-8 h-8 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/40 flex items-center justify-center text-xs font-bold" id="user-avatar">SA</div>
+                <div class="flex items-center gap-2 pl-3 border-l border-slate-800">
+                    <div class="w-8 h-8 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/40 flex items-center justify-center text-sm font-bold" id="user-avatar">👑</div>
                     <div class="hidden sm:block text-left">
-                        <div class="text-xs font-bold text-white" id="user-display-name">Root Super Admin</div>
-                        <div class="text-[10px] text-purple-400 font-medium" id="user-role-name">Toàn quyền hệ sinh thái</div>
+                        <div class="text-xs font-bold text-white leading-tight" id="user-display-name">Root Super Admin</div>
+                        <div class="text-[10px] text-purple-400 font-medium leading-none" id="user-role-name">Toàn quyền hệ sinh thái</div>
+                    </div>
+                    <div class="flex items-center gap-1 ml-2 border-l border-slate-800 pl-2">
+                        <button type="button" onclick="CafeAuth.switchAccount()" title="Đổi tài khoản khác" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-amber-400 text-xs font-bold transition-all">
+                            🔄
+                        </button>
+                        <button type="button" onclick="CafeAuth.logout('login.html')" title="Đăng xuất" class="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 text-xs font-bold transition-all">
+                            🚪
+                        </button>
                     </div>
                 </div>
             </div>
@@ -175,99 +168,6 @@
                 </div>
             </section>
 
-
-            <!-- ================================================================= -->
-            <!-- PHÂN HỆ 2: STORE ADMIN PORTAL (Dành riêng cho Chủ Quán quản lý)  -->
-            <!-- ================================================================= -->
-            <section id="view-store-admin" class="hidden space-y-8 max-w-7xl mx-auto">
-                <!-- Store Header Banner with Branch Switcher -->
-                <div class="p-6 rounded-2xl bg-gradient-to-r from-amber-950/40 via-slate-900 to-slate-900 border border-amber-500/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xl">
-                    <div class="flex items-center gap-4">
-                        <div class="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/40 flex items-center justify-center text-3xl shadow-inner">
-                            ☕
-                        </div>
-                        <div>
-                            <div class="flex items-center gap-2">
-                                <h2 class="text-xl font-black text-white" id="current-store-name">Aroma Coffee Roastery</h2>
-                                <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30 uppercase" id="current-store-code">STORE-HCM-01</span>
-                            </div>
-                            <p class="text-xs text-slate-400 mt-1" id="current-store-address">120 Nguyễn Huệ, Quận 1, TP.HCM • Hotline: 0901 112 222</p>
-                        </div>
-                    </div>
-
-                    <!-- Branch Switcher & POS Shortcut -->
-                    <div class="flex items-center gap-3">
-                        <div>
-                            <label class="text-[10px] text-slate-400 block mb-1">Chuyển sang quán khác:</label>
-                            <select id="select-active-store" onchange="onStoreSelectChange(this.value)" class="bg-slate-800 text-amber-400 font-bold text-xs rounded-xl px-3 py-2 border border-slate-700 focus:outline-none focus:ring-1 focus:ring-amber-500">
-                                <!-- Populated dynamically -->
-                            </select>
-                        </div>
-                        <a href="pos.html" class="mt-4 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20 transition-all flex items-center gap-1.5">
-                            <span>VÀO BÁN HÀNG POS ➔</span>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Store KPI Metrics -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
-                        <span class="text-xs font-medium text-slate-400">Doanh Thu Quán Hôm Nay</span>
-                        <div class="text-2xl font-black text-amber-400 mt-1 font-mono" id="store-today-rev">8.450.000 đ</div>
-                        <div class="text-[11px] text-emerald-400 font-semibold mt-2">↑ 18.5% so với cùng kỳ</div>
-                    </div>
-
-                    <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
-                        <span class="text-xs font-medium text-slate-400">Số Bàn Đang Có Khách</span>
-                        <div class="text-2xl font-black text-white mt-1" id="store-occupied-tables">12 / 18 bàn</div>
-                        <div class="text-[11px] text-amber-400 font-semibold mt-2">Giờ cao điểm chiều</div>
-                    </div>
-
-                    <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
-                        <span class="text-xs font-medium text-slate-400">Món Đang Phục Vụ</span>
-                        <div class="text-2xl font-black text-white mt-1" id="store-menu-count">24 món</div>
-                        <div class="text-[11px] text-slate-400 mt-2">3 món best-seller</div>
-                    </div>
-
-                    <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
-                        <span class="text-xs font-medium text-slate-400">Tài Khoản Thụ Hưởng VietQR</span>
-                        <div class="text-base font-black text-emerald-400 mt-1 font-mono" id="store-bank-info">MB • 99998888</div>
-                        <div class="text-[11px] text-slate-400 mt-2" id="store-bank-name">AROMA COFFEE ROASTERY</div>
-                    </div>
-                </div>
-
-                <!-- Store Management Tabs & Grid -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- Left: Staff in this branch -->
-                    <div class="rounded-2xl bg-slate-900 border border-slate-800 p-5 space-y-4">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <h3 class="font-bold text-white text-sm">Nhân Sự Chi Nhánh</h3>
-                                <p class="text-[11px] text-slate-400">Nhân viên thu ngân & pha chế của quán</p>
-                            </div>
-                            <button onclick="alert('Mở form thêm nhân viên mới cho chi nhánh')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 text-xs font-bold border border-slate-700">+ Thêm</button>
-                        </div>
-
-                        <div class="space-y-2.5" id="store-staff-list">
-                            <!-- Staff items rendered dynamically -->
-                        </div>
-                    </div>
-
-                    <!-- Center & Right: Branch Tables Layout & Live Orders -->
-                    <div class="lg:col-span-2 rounded-2xl bg-slate-900 border border-slate-800 p-5 space-y-4">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <h3 class="font-bold text-white text-sm">Sơ Đồ Bàn Hiện Tại & Đơn QR</h3>
-                                <p class="text-[11px] text-slate-400">Dữ liệu được lọc độc quyền theo StoreID của quán này</p>
-                            </div>
-                            <span class="text-xs text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full font-bold">Đồng bộ Real-time</span>
-                        </div>
-
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3" id="store-tables-preview">
-                            <!-- Tables rendered dynamically -->
-                        </div>
-                    </div>
-                </div>
             </section>
         </main>
     </div>
@@ -441,42 +341,7 @@
             }
         ];
 
-        // 1. Perspective Switcher
-        function switchView(mode) {
-            currentPerspective = mode;
-            const superSection = document.getElementById('view-super-admin');
-            const storeSection = document.getElementById('view-store-admin');
-            const tabSuper = document.getElementById('tab-super');
-            const tabStore = document.getElementById('tab-store');
-            const avatar = document.getElementById('user-avatar');
-            const displayName = document.getElementById('user-display-name');
-            const roleName = document.getElementById('user-role-name');
-
-            if (mode === 'super') {
-                superSection.classList.remove('hidden');
-                storeSection.classList.add('hidden');
-                tabSuper.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-purple-600 text-white shadow-md shadow-purple-600/30 flex items-center gap-2';
-                tabStore.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white flex items-center gap-2';
-                avatar.className = 'w-8 h-8 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/40 flex items-center justify-center text-xs font-bold';
-                avatar.textContent = 'SA';
-                displayName.textContent = 'Root Super Admin';
-                roleName.textContent = 'Toàn quyền hệ sinh thái';
-            } else {
-                superSection.classList.add('hidden');
-                storeSection.classList.remove('hidden');
-                tabStore.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-amber-500 text-slate-950 font-black shadow-md shadow-amber-500/30 flex items-center gap-2';
-                tabSuper.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white flex items-center gap-2';
-                
-                const curStore = storesData.find(s => s.id === activeStoreId);
-                avatar.className = 'w-8 h-8 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center text-xs font-bold';
-                avatar.textContent = 'CO';
-                displayName.textContent = curStore ? curStore.owner : 'Chủ Quán';
-                roleName.textContent = `Chủ Quán • ${curStore ? curStore.name : ''}`;
-                renderStoreAdmin();
-            }
-        }
-
-        // 2. Render Super Admin Stores Table
+        // 1. Render Super Admin Stores Table
         function renderSuperStores() {
             const tbody = document.getElementById('stores-table-body');
             document.getElementById('stat-total-stores').textContent = storesData.length;
@@ -510,78 +375,12 @@
                         </span>
                     </td>
                     <td class="py-3.5 px-5 text-right">
-                        <button onclick="loginAsStore(${store.id})" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-slate-300 font-bold text-[11px] border border-slate-700 hover:border-amber-400 transition-all flex items-center gap-1.5 ml-auto">
-                            <span>Quản Lý Quán</span> ➔
-                        </button>
+                        <span class="px-2.5 py-1 rounded-lg bg-slate-800/80 text-purple-300 border border-purple-500/20 text-[11px] font-mono font-bold">
+                            Tenant #${store.id}
+                        </span>
                     </td>
                 </tr>
             `).join('');
-
-            // Also update branch selector in Store Admin
-            const selectEl = document.getElementById('select-active-store');
-            if (selectEl) {
-                selectEl.innerHTML = storesData.map(s => `
-                    <option value="${s.id}" ${s.id === activeStoreId ? 'selected' : ''}>${s.name} (${s.code})</option>
-                `).join('');
-            }
-        }
-
-        // 3. Render Store Admin (Single Tenant View)
-        function renderStoreAdmin() {
-            const store = storesData.find(s => s.id === activeStoreId) || storesData[0];
-            if (!store) return;
-
-            document.getElementById('current-store-name').textContent = store.name;
-            document.getElementById('current-store-code').textContent = store.code;
-            document.getElementById('current-store-address').textContent = `${store.address} • Hotline: ${store.phone}`;
-            document.getElementById('store-today-rev').textContent = store.todayRev;
-            document.getElementById('store-occupied-tables').textContent = store.occupied;
-            document.getElementById('store-bank-info').textContent = store.bank;
-            document.getElementById('store-bank-name').textContent = store.bankName;
-
-            // Render Staff
-            const staffList = document.getElementById('store-staff-list');
-            staffList.innerHTML = (store.staff || []).map(st => `
-                <div class="p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 flex items-center justify-between">
-                    <div>
-                        <div class="text-xs font-bold text-white">${st.name}</div>
-                        <div class="text-[10px] text-slate-400">${st.role}</div>
-                    </div>
-                    <span class="text-[10px] px-2 py-0.5 rounded-md font-bold ${
-                        st.badge === 'Owner' ? 'bg-amber-500/20 text-amber-300' : 'bg-slate-700 text-slate-300'
-                    }">${st.badge}</span>
-                </div>
-            `).join('');
-
-            // Render Tables Preview
-            const tablesGrid = document.getElementById('store-tables-preview');
-            tablesGrid.innerHTML = (store.tables || []).map(tb => `
-                <div class="p-3 rounded-xl border ${
-                    tb.status === 'occupied' ? 'bg-rose-950/20 border-rose-800/60 text-rose-300' :
-                    tb.status === 'merged' ? 'bg-amber-950/20 border-amber-800/60 text-amber-300' :
-                    'bg-slate-800/50 border-slate-700/60 text-emerald-400'
-                } flex flex-col justify-between">
-                    <div class="flex justify-between items-center text-xs font-bold">
-                        <span class="text-white">${tb.name}</span>
-                        <span class="text-[10px] uppercase font-bold">${tb.status === 'occupied' ? 'Có khách' : tb.status === 'merged' ? 'Đã gộp' : 'Trống'}</span>
-                    </div>
-                    <div class="mt-2 text-[11px] font-mono font-semibold ${tb.status === 'occupied' ? 'text-amber-400' : 'text-slate-400'}">
-                        ${tb.bill}
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function onStoreSelectChange(newStoreId) {
-            activeStoreId = parseInt(newStoreId, 10);
-            renderStoreAdmin();
-            showToast(`Đã chuyển sang quản trị quán: ${storesData.find(s => s.id === activeStoreId).name}`, 'info');
-        }
-
-        function loginAsStore(storeId) {
-            activeStoreId = storeId;
-            switchView('store');
-            showToast(`Đang đóng vai trò Chủ Quán cho '${storesData.find(s => s.id === storeId).name}'`, 'info');
         }
 
         // 4. Modal Handlers
@@ -658,6 +457,17 @@
         // Init
         document.addEventListener('DOMContentLoaded', () => {
             renderSuperStores();
+            if (window.CafeAuth) {
+                const user = CafeAuth.getCurrentUser();
+                if (user) {
+                    const nameEl = document.getElementById('user-display-name');
+                    const roleEl = document.getElementById('user-role-name');
+                    const avatarEl = document.getElementById('user-avatar');
+                    if (nameEl) nameEl.textContent = user.fullName || user.username;
+                    if (roleEl) roleEl.textContent = user.roleName || user.role;
+                    if (avatarEl) avatarEl.textContent = user.role === 'SuperAdmin' ? '👑' : (user.roleIcon || '🏪');
+                }
+            }
         });
     </script>
 </body>

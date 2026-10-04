@@ -135,6 +135,7 @@ Sau khi deploy thành công, bạn có thể truy cập các đường dẫn sau
 
 | Đường Dẫn (Route) | Phân Hệ Vận Hành | Mô Tả Chức Năng |
 | :--- | :--- | :--- |
+| **`/login`** | **Xác Thực & Đăng Nhập** | Form đăng nhập bàn phím số PIN 4 số hoặc tài khoản, tự động điều hướng đúng vai trò. |
 | **`/`** | **Trang Chủ & Cổng Phân Quyền** | Trung tâm điều hướng đến 4 vai trò vận hành chuyên biệt. |
 | **`/pos`** | **Quầy Thu Ngân (POS)** | Màn hình cảm ứng bán hàng, hình món to rõ, thanh toán VietQR động, in bill K80, **khóa quyền xóa hóa đơn**. |
 | **`/waiter`** (hoặc `/order`) | **Order Điện Thoại Tại Bàn** | Màn hình smartphone cho phục vụ bàn, chọn bàn, tùy biến đường/đá/topping, nút **`🚀 BẮN BẾP`**. |
@@ -142,6 +143,16 @@ Sau khi deploy thành công, bạn có thể truy cập các đường dẫn sau
 | **`/store-admin`** | **Quản Trị Quán (Store Admin)** | Quản lý sơ đồ bàn (thuần quản lý), sửa menu và đổi hình ảnh món, phân quyền nhân sự, duyệt hủy hóa đơn. |
 | **`/super-admin`** | **Quản Trị Nền Tảng (Super Admin)** | Dành cho chủ ứng dụng SaaS quản lý các quán đăng ký và tạo gói dịch vụ (Plans). |
 | **`/api/health`** | **Kiểm Tra Kết Nối Neon DB** | Trả về JSON trạng thái: `{"status":"online", "neonDatabase":{"connected":true...}}`. |
+
+### 🔑 Danh Sách Tài Khoản, Mật Khẩu Chuẩn & Mã PIN Hệ Thống:
+
+| Vai Trò (Role) | Tên Đăng Nhập | Mật Khẩu Bảo Mật (Password) | Mã PIN 4 Số | Màn Hình Mặc Định |
+| :--- | :--- | :--- | :---: | :--- |
+| **👑 Super Admin SaaS (Root)** | `superadmin` | `SuperAdmin@2026!` | **`9999`** | `super-admin-dashboard.html` / `admin-dashboard.html` |
+| **🏪 Quản Lý / Chủ Quán** | `manager` | `Manager@2026!` | **`8888`** | `store-admin-dashboard.html` |
+| **💻 Thu Ngân POS Quầy** | `cashier` | `Cashier@1234!` | **`1234`** | `pos.html` |
+| **📱 Phục Vụ / Order Bàn** | `waiter` | `Waiter@2345!` | **`2345`** | `waiter-order.html` |
+| **☕ Quầy Pha Chế (Barista)** | `barista` | `Barista@3456!` | **`3456`** | `barista.html` |
 
 ---
 

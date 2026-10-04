@@ -10,6 +10,7 @@ powershell -NoProfile -Command "Start-Process 'frontend\index.html'"
 echo.
 echo ========================================================
 echo   CAC PHAN HE THEO PHAN QUYEN VAI TRO CHUYEN BIET:
+echo   0. Dang Nhap & Xac Thuc:    frontend\login.html
 echo   1. Trang Chu va Portal:     frontend\index.html
 echo   2. Quan Ly Quan (Admin):    frontend\store-admin-dashboard.html
 echo   3. Thu Ngan POS (Cashier):  frontend\pos.html

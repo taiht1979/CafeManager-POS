@@ -4,6 +4,6 @@ echo ========================================================
 echo         CAFEMANAGER POS - STARTING SYSTEM
 echo ========================================================
 echo.
-echo Dang mo giao dien tren trinh duyet mac dinh...
-powershell -NoProfile -Command "Start-Process 'frontend\index.html'"
+echo Dang mo Man Hinh Dang Nhap & Phan Quyen tren trinh duyet...
+powershell -NoProfile -Command "Start-Process 'frontend\login.html'"
 exit
