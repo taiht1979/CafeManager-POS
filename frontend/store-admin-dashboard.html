@@ -1499,37 +1499,51 @@
                 return;
             }
 
+            const itemPayload = {
+                id: editId ? parseInt(editId, 10) : null,
+                name: name,
+                cat: cat,
+                sku: sku,
+                price: price,
+                desc: desc,
+                img: img,
+                allowTopping: allowTopping,
+                allowedToppings: allowedToppings
+            };
+
+            let targetItem = null;
             if (editId) {
-                const item = storeMenu.find(m => m.id === parseInt(editId, 10));
-                if (item) {
-                    item.name = name;
-                    item.cat = cat;
-                    item.sku = sku;
-                    item.price = price;
-                    item.desc = desc;
-                    item.available = available;
-                    item.img = img;
-                    item.allowTopping = allowTopping;
-                    item.allowedToppings = allowedToppings;
+                targetItem = storeMenu.find(m => m.id === parseInt(editId, 10));
+                if (targetItem) {
+                    Object.assign(targetItem, itemPayload);
                     showToast(`✓ Đã cập nhật món "${name}" thành công!`, 'success');
                 }
             } else {
-                storeMenu.push({
+                targetItem = {
                     id: Date.now(),
-                    name: name,
-                    cat: cat,
-                    sku: sku,
-                    price: price,
-                    desc: desc,
-                    available: available,
-                    img: img,
-                    allowTopping: allowTopping,
-                    allowedToppings: allowedToppings
-                });
+                    ...itemPayload,
+                    available: available
+                };
+                storeMenu.push(targetItem);
                 showToast(`✓ Đã thêm món mới: "${name}"`, 'success');
             }
 
             localStorage.setItem('admin_store_menu', JSON.stringify(storeMenu));
+
+            // Tự động đồng bộ lên Neon Backend API theo thời gian thực
+            fetch('/api/menu', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(itemPayload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.success && data.data && data.data.ItemID) {
+                    targetItem.id = data.data.ItemID;
+                    localStorage.setItem('admin_store_menu', JSON.stringify(storeMenu));
+                }
+            })
+            .catch(() => {});
 
             // Bắn tín hiệu đồng bộ Real-time sang POS & Waiter Order
             if (syncChannel) {
@@ -1551,6 +1565,9 @@
                 if (syncChannel) {
                     syncChannel.postMessage({ type: 'MENU_UPDATED', timestamp: Date.now() });
                 }
+
+                // Gửi lệnh xóa lên Neon API
+                fetch(`/api/menu/${id}`, { method: 'DELETE' }).catch(() => {});
 
                 renderMenu();
                 showToast(`✓ Đã xóa món "${item.name}"`, 'info');
@@ -1904,13 +1921,25 @@
                 bus.postMessage({ type: 'STAFF_UPDATED', staff: storeStaff });
             } catch (e) {}
 
-            // Gửi nền API nếu có server backend
+            // Gửi nền API để đồng bộ trực tiếp lên Neon DB
             try {
+                const apiPayload = {
+                    ...savedStaff,
+                    id: editId ? parseInt(editId, 10) : null
+                };
                 fetch('/api/staff', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(savedStaff)
-                }).catch(() => {});
+                    body: JSON.stringify(apiPayload)
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.success && data.data && data.data.UserID) {
+                        savedStaff.id = data.data.UserID;
+                        localStorage.setItem('admin_store_staff', JSON.stringify(storeStaff));
+                    }
+                })
+                .catch(() => {});
             } catch (e) {}
 
             // Tự động mở cửa sổ thông tin đăng nhập cấp cho nhân viên ngay lập tức!

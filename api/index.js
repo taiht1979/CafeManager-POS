@@ -354,35 +354,54 @@ app.get('/api/menu', async (req, res) => {
 });
 
 app.post('/api/menu', async (req, res) => {
-    const { id, storeId = 1, name, cat = 'Cà Phê', price = 30000, img = '☕', desc = '', allowTopping = false, allowedToppings = [] } = req.body;
+    const { id, storeId = 1, name, cat = 'Cà Phê', price = 30000, img = '☕', desc = '', sku, allowTopping = false, allowedToppings = [] } = req.body;
     if (!name) return res.status(400).json({ error: 'Tên món là bắt buộc!' });
+
+    const finalSku = (sku || `SKU-${Date.now().toString().slice(-6)}`).toUpperCase().trim();
+    const isClientTimestamp = id && Number(id) > 1000000000;
+    const dbItemId = (!id || isClientTimestamp) ? null : parseInt(id, 10);
 
     if (db.isConfigured()) {
         try {
-            if (id) {
+            if (dbItemId) {
                 const updateRes = await db.query(`
                     UPDATE MenuItems 
-                    SET ItemName = $1, CategoryName = $2, BasePrice = $3, ImageURL = $4, Description = $5, AllowsTopping = $6, AvailableToppings = $7, UpdatedAt = CURRENT_TIMESTAMP
-                    WHERE ItemID = $8 AND StoreID = $9
+                    SET ItemName = $1, CategoryName = $2, BasePrice = $3, ImageUrl = $4, Description = $5, AllowsTopping = $6, AvailableToppings = $7, SKU = COALESCE($8, SKU), UpdatedAt = CURRENT_TIMESTAMP
+                    WHERE ItemID = $9 AND StoreID = $10
                     RETURNING *
-                `, [name, cat, price, img, desc, allowTopping, JSON.stringify(allowedToppings), id, storeId]);
-                return res.json({ success: true, message: 'Đã cập nhật món thành công', data: updateRes.rows[0] });
-            } else {
-                const insertRes = await db.query(`
-                    INSERT INTO MenuItems (StoreID, ItemName, CategoryName, BasePrice, ImageURL, Description, SKU, AllowsTopping, AvailableToppings)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-                    RETURNING *
-                `, [storeId, name, cat, price, img, desc, `SKU-${Date.now().toString().slice(-4)}`, allowTopping, JSON.stringify(allowedToppings)]);
-                return res.json({ success: true, message: 'Đã thêm món mới thành công', data: insertRes.rows[0] });
+                `, [name, cat, price, img, desc, allowTopping, JSON.stringify(allowedToppings), finalSku, dbItemId, storeId]);
+                
+                if (updateRes.rows.length > 0) {
+                    return res.json({ success: true, message: 'Đã cập nhật món thành công trên Neon DB', data: updateRes.rows[0] });
+                }
             }
+
+            // Thêm mới hoặc Upsert theo SKU nếu đã tồn tại
+            const insertRes = await db.query(`
+                INSERT INTO MenuItems (StoreID, ItemName, CategoryName, BasePrice, ImageUrl, Description, SKU, AllowsTopping, AvailableToppings)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                ON CONFLICT (StoreID, SKU) DO UPDATE SET
+                    ItemName = EXCLUDED.ItemName,
+                    CategoryName = EXCLUDED.CategoryName,
+                    BasePrice = EXCLUDED.BasePrice,
+                    ImageUrl = EXCLUDED.ImageUrl,
+                    Description = EXCLUDED.Description,
+                    AllowsTopping = EXCLUDED.AllowsTopping,
+                    AvailableToppings = EXCLUDED.AvailableToppings,
+                    UpdatedAt = CURRENT_TIMESTAMP
+                RETURNING *
+            `, [storeId, name, cat, price, img, desc, finalSku, allowTopping, JSON.stringify(allowedToppings)]);
+
+            return res.json({ success: true, message: 'Đã lưu món thành công vào Neon DB', data: insertRes.rows[0] });
         } catch (e) {
+            console.error('Lỗi lưu MenuItems vào Neon:', e.message);
             return res.status(500).json({ error: e.message });
         }
     }
 
-    // Mock
-    if (id) {
-        const item = mockMenu.find(m => m.ItemID === id);
+    // Mock Fallback
+    if (dbItemId) {
+        const item = mockMenu.find(m => m.ItemID === dbItemId);
         if (item) {
             item.ItemName = name;
             item.CategoryName = cat;
@@ -408,6 +427,23 @@ app.post('/api/menu', async (req, res) => {
     res.json({ success: true, message: 'Đã lưu món (Mock)' });
 });
 
+app.delete('/api/menu/:id', async (req, res) => {
+    const itemId = parseInt(req.params.id, 10);
+    const storeId = parseInt(req.query.store_id || 1, 10);
+
+    if (db.isConfigured()) {
+        try {
+            await db.query('DELETE FROM MenuItems WHERE ItemID = $1 AND StoreID = $2', [itemId, storeId]);
+            return res.json({ success: true, message: 'Đã xóa món khỏi Neon DB' });
+        } catch (e) {
+            return res.status(500).json({ error: e.message });
+        }
+    }
+
+    mockMenu = mockMenu.filter(m => m.ItemID !== itemId);
+    res.json({ success: true, message: 'Đã xóa món (Mock)' });
+});
+
 // 6. Quản lý Nhân sự (StaffUsers)
 app.get('/api/staff', async (req, res) => {
     const storeId = parseInt(req.query.store_id || 1, 10);
@@ -430,38 +466,55 @@ app.get('/api/staff', async (req, res) => {
 app.post('/api/staff', async (req, res) => {
     const { id, storeId = 1, username, password, fullName, name, role, phone, pin, isActive = true } = req.body;
     const finalName = fullName || name;
-    const finalUser = (username || phone || ('nv_' + Date.now())).toLowerCase().trim();
+    const finalUser = (username || phone || ('nv_' + Date.now().toString().slice(-4))).toLowerCase().trim();
     const finalPin = pin ? String(pin).trim() : '1234';
     const finalPass = password || finalPin;
 
     if (!finalName) return res.status(400).json({ error: 'Tên nhân viên là bắt buộc!' });
 
+    const isClientTimestamp = id && Number(id) > 1000000000;
+    const dbUserId = (!id || isClientTimestamp) ? null : parseInt(id, 10);
+
     if (db.isConfigured()) {
         try {
-            if (id) {
+            if (dbUserId) {
                 const updateRes = await db.query(`
                     UPDATE StaffUsers 
                     SET FullName = $1, Role = $2, Phone = $3, Pin = $4, Username = $5, IsActive = $6, UpdatedAt = CURRENT_TIMESTAMP
                     WHERE UserID = $7 AND StoreID = $8
                     RETURNING *
-                `, [finalName, role, phone, finalPin, finalUser, isActive, id, storeId]);
-                return res.json({ success: true, message: 'Đã cập nhật nhân viên', data: updateRes.rows[0] });
-            } else {
-                const insertRes = await db.query(`
-                    INSERT INTO StaffUsers (StoreID, Username, Password, Pin, FullName, Role, Phone, IsActive)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-                    RETURNING *
-                `, [storeId, finalUser, finalPass, finalPin, finalName, role, phone, isActive]);
-                return res.json({ success: true, message: 'Đã thêm nhân sự mới thành công', data: insertRes.rows[0] });
+                `, [finalName, role, phone, finalPin, finalUser, isActive, dbUserId, storeId]);
+
+                if (updateRes.rows.length > 0) {
+                    return res.json({ success: true, message: 'Đã cập nhật nhân viên trên Neon DB', data: updateRes.rows[0] });
+                }
             }
+
+            // Thêm mới hoặc Upsert theo Username nếu đã tồn tại
+            const insertRes = await db.query(`
+                INSERT INTO StaffUsers (StoreID, Username, Password, Pin, FullName, Role, Phone, IsActive)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                ON CONFLICT (StoreID, Username) DO UPDATE SET
+                    FullName = EXCLUDED.FullName,
+                    Role = EXCLUDED.Role,
+                    Phone = EXCLUDED.Phone,
+                    Pin = EXCLUDED.Pin,
+                    Password = EXCLUDED.Password,
+                    IsActive = EXCLUDED.IsActive,
+                    UpdatedAt = CURRENT_TIMESTAMP
+                RETURNING *
+            `, [storeId, finalUser, finalPass, finalPin, finalName, role, phone, isActive]);
+
+            return res.json({ success: true, message: 'Đã lưu nhân viên thành công vào Neon DB', data: insertRes.rows[0] });
         } catch (e) {
+            console.error('Lỗi lưu StaffUsers vào Neon:', e.message);
             return res.status(500).json({ error: e.message });
         }
     }
 
     // Mock fallback
-    if (id) {
-        const staff = mockStaff.find(s => s.UserID === parseInt(id, 10));
+    if (dbUserId) {
+        const staff = mockStaff.find(s => s.UserID === dbUserId);
         if (staff) {
             staff.FullName = finalName;
             staff.Role = role;
