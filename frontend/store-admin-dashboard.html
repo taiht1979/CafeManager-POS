@@ -49,6 +49,7 @@
         .tab-view.active { display: block; }
     </style>
     <script src="js/auth.js"></script>
+    <script src="js/cafe-store.js"></script>
 </head>
 <body class="h-[100dvh] font-sans antialiased bg-slate-950 text-slate-100 flex flex-col md:flex-row overflow-hidden">
 
@@ -82,7 +83,7 @@
             <div class="flex items-center gap-3">
                 <span class="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-lg">🏪</span>
                 <div>
-                    <h1 class="text-xs font-black text-white leading-tight" id="sidebar-store-title">Aroma Coffee</h1>
+                    <h1 class="text-xs font-black text-white leading-tight" id="sidebar-store-title"></h1>
                     <span class="text-[9px] text-amber-400 font-bold uppercase tracking-wider font-mono">PORTAL CHỦ QUÁN</span>
                 </div>
             </div>
@@ -139,13 +140,7 @@
 
             <!-- Nút Đồng Bộ / Xuất Dữ Liệu Lên Neon DB -->
             <div class="pt-2 border-t border-slate-800/80 my-1.5">
-                <button onclick="openExportSqlModal()" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-gradient-to-r from-sky-500/15 via-emerald-500/15 to-transparent border border-sky-500/40 text-sky-300 hover:text-white hover:border-sky-400 transition-all font-bold text-xs shadow-sm">
-                    <div class="flex items-center gap-2">
-                        <span class="text-base">📤</span>
-                        <span>Đẩy Dữ Liệu Lên Neon</span>
-                    </div>
-                    <span class="text-[9px] bg-sky-500/25 text-sky-300 border border-sky-500/40 px-1.5 py-0.5 rounded font-mono font-black">SQL</span>
-                </button>
+                <!-- Đã bỏ nút xuất SQL: dữ liệu giờ được lưu trực tiếp trên server -->
             </div>
         </nav>
 
@@ -348,20 +343,20 @@
                         </h3>
                         <div>
                             <label class="text-slate-400 block mb-1">Tên Quán (*):</label>
-                            <input type="text" id="setting-store-name" value="AROMA COFFEE ROASTERY" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-bold focus:outline-none focus:border-amber-500">
+                            <input type="text" id="setting-store-name" value="" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-bold focus:outline-none focus:border-amber-500">
                         </div>
                         <div>
                             <label class="text-slate-400 block mb-1">Địa Chỉ (*):</label>
-                            <input type="text" id="setting-store-address" value="120 Nguyễn Huệ, Quận 1, TP.HCM" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-amber-500">
+                            <input type="text" id="setting-store-address" value="" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-amber-500">
                         </div>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="text-slate-400 block mb-1">Hotline:</label>
-                                <input type="text" id="setting-store-phone" value="0901 112 222" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-amber-500">
+                                <input type="text" id="setting-store-phone" value="" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-amber-500">
                             </div>
                             <div>
                                 <label class="text-slate-400 block mb-1">Mật khẩu Wifi:</label>
-                                <input type="text" id="setting-store-wifi" value="Aroma@8888" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-amber-500">
+                                <input type="text" id="setting-store-wifi" value="" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-amber-500">
                             </div>
                         </div>
                         <button onclick="saveStoreSettings()" class="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md transition-all">
@@ -388,11 +383,11 @@
                         </div>
                         <div>
                             <label class="text-slate-400 block mb-1">Số Tài Khoản (STK) (*):</label>
-                            <input type="text" id="setting-bank-acc" value="99998888" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-mono text-sm font-bold focus:outline-none focus:border-amber-500">
+                            <input type="text" id="setting-bank-acc" value="" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-mono text-sm font-bold focus:outline-none focus:border-amber-500">
                         </div>
                         <div>
                             <label class="text-slate-400 block mb-1">Tên Chủ Tài Khoản (In hoa không dấu) (*):</label>
-                            <input type="text" id="setting-bank-name" value="AROMA COFFEE ROASTERY" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-bold uppercase focus:outline-none focus:border-amber-500">
+                            <input type="text" id="setting-bank-name" value="" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-bold uppercase focus:outline-none focus:border-amber-500">
                         </div>
                         <button onclick="saveVietQrSettings()" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs shadow-md transition-all">
                             ✓ LƯU THÔNG TIN VIETQR
@@ -973,87 +968,43 @@
         const syncChannel = window.BroadcastChannel ? new BroadcastChannel('pos_system_sync') : null;
 
         // State Persistence in LocalStorage
-        let storeTables = JSON.parse(localStorage.getItem('admin_store_tables') || 'null');
-        if (!storeTables) {
-            storeTables = [
-                { id: 1, name: 'Bàn 01', area: 'Tầng 1 - Máy Lạnh', capacity: 4, status: 'active' },
-                { id: 2, name: 'Bàn 02', area: 'Tầng 1 - Máy Lạnh', capacity: 4, status: 'active' },
-                { id: 3, name: 'Bàn 03', area: 'Sân Vườn Nhiệt Đới', capacity: 6, status: 'active' },
-                { id: 4, name: 'Bàn 04', area: 'Sân Vườn Nhiệt Đới', capacity: 4, status: 'active' },
-                { id: 5, name: 'Bàn 05', area: 'Sân Vườn Nhiệt Đới', capacity: 2, status: 'active' },
-                { id: 6, name: 'Bàn VIP 01', area: 'Phòng Lạnh VIP', capacity: 8, status: 'active' },
-                { id: 7, name: 'Bàn VIP 02', area: 'Phòng Lạnh VIP', capacity: 6, status: 'active' },
-                { id: 8, name: 'Bàn Ban Công 01', area: 'Tầng Lầu Ban Công', capacity: 4, status: 'active' },
-                { id: 9, name: 'Bàn Ban Công 02', area: 'Tầng Lầu Ban Công', capacity: 4, status: 'maintenance' }
-            ];
-            localStorage.setItem('admin_store_tables', JSON.stringify(storeTables));
-        }
+        // Dữ liệu thật nằm trên server. localStorage chỉ là bộ nhớ đệm, được làm mới bởi syncAdminData().
+        let storeTables = JSON.parse(localStorage.getItem('admin_store_tables') || '[]');
+        let storeToppings = JSON.parse(localStorage.getItem('admin_store_toppings') || '[]');
+        let storeMenu = JSON.parse(localStorage.getItem('admin_store_menu') || '[]');
+        let storeStaff = [];
+        let adminInvoices = [];
 
-        // Toppings Quán (Quản lý các loại topping gọi thêm trong thực đơn)
-        let storeToppings = JSON.parse(localStorage.getItem('admin_store_toppings') || 'null');
-        if (!storeToppings || storeToppings.length === 0) {
-            storeToppings = [
-                { id: 'top-1', name: 'Trân Châu Trắng Thủy Tinh', price: 10000 },
-                { id: 'top-2', name: 'Kem Phô Mai Cheese', price: 12000 },
-                { id: 'top-3', name: 'Thạch Đào Giòn', price: 10000 },
-                { id: 'top-4', name: 'Hạt Sen Bùi Béo', price: 12000 },
-                { id: 'top-5', name: 'Trân Châu Hoàng Kim', price: 10000 },
-                { id: 'top-6', name: 'Sương Sáo Thảo Mộc', price: 8000 }
-            ];
-            localStorage.setItem('admin_store_toppings', JSON.stringify(storeToppings));
-        }
-
-        let storeMenu = JSON.parse(localStorage.getItem('admin_store_menu') || 'null');
-        if (!storeMenu) {
-            storeMenu = [
-                { id: 1, name: 'Cà Phê Muối Đặc Biệt', cat: 'Cà Phê', sku: 'CF-SALT', price: 35000, img: '☕', desc: 'Kem muối béo mặn sánh mịn', available: true, allowTopping: false, allowedToppings: [] },
-                { id: 2, name: 'Trà Sen Vàng Hạt Dẻ', cat: 'Trà & Macchiato', sku: 'TEA-LOTUS', price: 45000, img: '🪷', desc: 'Hạt sen ninh nhừ bùi béo', available: true, allowTopping: true, allowedToppings: ['Trân Châu Trắng Thủy Tinh', 'Kem Phô Mai Cheese', 'Hạt Sen Bùi Béo'] },
-                { id: 3, name: 'Cà Phê Sữa Đá Sài Gòn', cat: 'Cà Phê', sku: 'CF-MILK', price: 29000, img: '🥤', desc: 'Robusta Buôn Ma Thuột đậm vị', available: true, allowTopping: false, allowedToppings: [] },
-                { id: 4, name: 'Trà Đào Cam Sả Tươi', cat: 'Trà & Macchiato', sku: 'TEA-PEACH', price: 42000, img: '🍑', desc: 'Miếng đào giòn ngọt thanh', available: true, allowTopping: true, allowedToppings: ['Trân Châu Trắng Thủy Tinh', 'Thạch Đào Giòn', 'Kem Phô Mai Cheese'] },
-                { id: 5, name: 'Matcha Đá Xay Hạnh Nhân', cat: 'Đá Xay - Freeze', sku: 'ICE-MATCHA', price: 48000, img: '🍃', desc: 'Matcha Uji phủ kem tươi', available: true, allowTopping: true, allowedToppings: ['Trân Châu Trắng Thủy Tinh', 'Kem Phô Mai Cheese'] },
-                { id: 6, name: 'Bánh Tiramisu Truyền Thống', cat: 'Bánh Ngọt', sku: 'CAKE-TIRA', price: 40000, img: '🍰', desc: 'Cacao Bỉ và rượu rum thơm', available: true, allowTopping: false, allowedToppings: [] }
-            ];
-            localStorage.setItem('admin_store_menu', JSON.stringify(storeMenu));
-        } else {
-            // Tự động tương thích ngược cho dữ liệu cũ nếu chưa có cờ allowTopping
-            let changed = false;
-            storeMenu.forEach(m => {
-                if (m.allowTopping === undefined) {
-                    m.allowTopping = (m.cat === 'Trà & Macchiato' || m.cat === 'Đá Xay - Freeze');
-                    m.allowedToppings = m.allowTopping ? ['Trân Châu Trắng Thủy Tinh', 'Kem Phô Mai Cheese'] : [];
-                    changed = true;
-                }
-            });
-            if (changed) {
-                localStorage.setItem('admin_store_menu', JSON.stringify(storeMenu));
+        // Gọi API ghi dữ liệu; luôn đồng bộ lại từ server sau đó để lỗi lưu không bị che giấu
+        async function adminSave(method, path, body, okMsg) {
+            const r = await CafeStore.api(method, path, body);
+            if (!r.ok) {
+                showToast('❌ ' + (r.json.error || 'Không lưu được, kiểm tra mạng'), 'warning');
+            } else if (okMsg) {
+                showToast(okMsg, 'success');
             }
+            await syncAdminData();
+            return r;
         }
 
-        let storeStaff = JSON.parse(localStorage.getItem('admin_store_staff') || 'null');
-        if (!storeStaff || !Array.isArray(storeStaff) || storeStaff.length === 0) {
-            storeStaff = [
-                { id: 1, name: 'Lê Hữu Nghĩa', username: 'manager', role: 'Manager', phone: '0901 112 222', pin: '8888', status: 'active' },
-                { id: 2, name: 'Trần Thu Ngân', username: 'cashier', role: 'Cashier', phone: '0908 888 777', pin: '1234', status: 'active' },
-                { id: 3, name: 'Hoàng Nhân Order', username: 'waiter', role: 'Waiter', phone: '0905 555 666', pin: '2345', status: 'active' },
-                { id: 4, name: 'Nguyễn Văn Barista', username: 'barista', role: 'Barista', phone: '0912 333 444', pin: '3456', status: 'active' }
-            ];
-            localStorage.setItem('admin_store_staff', JSON.stringify(storeStaff));
-        } else {
-            // Tự động bổ sung username cho nhân viên cũ nếu thiếu
-            let updated = false;
-            storeStaff.forEach(s => {
-                if (!s.username) {
-                    if (s.role === 'Manager') s.username = 'manager';
-                    else if (s.role === 'Cashier') s.username = 'cashier';
-                    else if (s.role === 'Waiter') s.username = 'waiter';
-                    else if (s.role === 'Barista') s.username = 'barista';
-                    else s.username = (s.phone ? s.phone.replace(/\D/g, '') : ('nv_' + s.id));
-                    updated = true;
-                }
-            });
-            if (updated) {
-                localStorage.setItem('admin_store_staff', JSON.stringify(storeStaff));
+        async function syncAdminData() {
+            const d = await CafeStore.loadReference();
+            if (d) {
+                storeTables = d.tables;
+                storeToppings = d.toppings;
+                storeMenu = d.menu;
+                const si = d.store;
+                const setVal = (id, v) => { const el = document.getElementById(id); if (el && document.activeElement !== el) el.value = v || ''; };
+                setVal('setting-store-name', si.name); setVal('setting-store-address', si.address);
+                setVal('setting-store-phone', si.phone); setVal('setting-store-wifi', si.wifi);
+                setVal('setting-bank-code', si.bankCode); setVal('setting-bank-acc', si.bankAcc); setVal('setting-bank-name', si.bankName);
+                const title = document.getElementById('sidebar-store-title');
+                if (title && si.name) title.textContent = si.name;
             }
+            const sr = await CafeStore.api('GET', '/api/staff');
+            if (sr.ok) storeStaff = sr.json.data;
+            renderTables(); renderMenu(); renderStaff();
+            if (typeof renderToppingsManager === 'function') { try { renderToppingsManager(); } catch (e) {} }
         }
 
         let activeInvoiceCode = null;
@@ -1152,7 +1103,7 @@
             document.getElementById('modal-table').classList.add('hidden');
         }
 
-        function saveTableForm() {
+        async function saveTableForm() {
             const editId = document.getElementById('table-edit-id').value;
             const name = document.getElementById('table-name-input').value.trim();
             const area = document.getElementById('table-area-input').value;
@@ -1161,42 +1112,19 @@
 
             if (!name) return alert('Vui lòng nhập tên bàn!');
 
-            if (editId) {
-                // Update
-                const table = storeTables.find(t => t.id === parseInt(editId, 10));
-                if (table) {
-                    table.name = name;
-                    table.area = area;
-                    table.capacity = capacity;
-                    table.status = status;
-                    showToast(`✓ Đã cập nhật thành công bàn "${name}"`, 'success');
-                }
-            } else {
-                // Add
-                storeTables.push({
-                    id: Date.now(),
-                    name: name,
-                    area: area,
-                    capacity: capacity,
-                    status: status
-                });
-                showToast(`✓ Đã thêm bàn mới: "${name}"`, 'success');
-            }
-
-            localStorage.setItem('admin_store_tables', JSON.stringify(storeTables));
             closeTableModal();
-            renderTables();
+            await adminSave('POST', '/api/tables',
+                { id: editId ? parseInt(editId, 10) : null, name, area, capacity, status },
+                editId ? `✓ Đã cập nhật bàn "${name}"` : `✓ Đã thêm bàn mới: "${name}"`);
+            if (syncChannel) syncChannel.postMessage({ type: 'TABLES_UPDATED', timestamp: Date.now() });
         }
 
-        function deleteTable(id) {
+        async function deleteTable(id) {
             const table = storeTables.find(t => t.id === id);
             if (!table) return;
-
             if (confirm(`Bạn có chắc chắn muốn xóa "${table.name}" khỏi danh sách bàn của quán?`)) {
-                storeTables = storeTables.filter(t => t.id !== id);
-                localStorage.setItem('admin_store_tables', JSON.stringify(storeTables));
-                renderTables();
-                showToast(`✓ Đã xóa bàn "${table.name}"`, 'info');
+                await adminSave('DELETE', `/api/tables/${id}`, null, `✓ Đã xóa bàn "${table.name}"`);
+                if (syncChannel) syncChannel.postMessage({ type: 'TABLES_UPDATED', timestamp: Date.now() });
             }
         }
 
@@ -1475,7 +1403,7 @@
             const editId = document.getElementById('menu-edit-id').value;
             const name = document.getElementById('menu-name-input').value.trim();
             const cat = document.getElementById('menu-cat-input').value;
-            const sku = document.getElementById('menu-sku-input').value.trim() || 'SKU-001';
+            const sku = document.getElementById('menu-sku-input').value.trim();
             const price = parseInt(document.getElementById('menu-price-input').value, 10);
             const desc = document.getElementById('menu-desc-input').value.trim();
             const available = document.getElementById('menu-status-input').value === 'true';
@@ -1507,70 +1435,23 @@
                 price: price,
                 desc: desc,
                 img: img,
+                available: available,
                 allowTopping: allowTopping,
                 allowedToppings: allowedToppings
             };
 
-            let targetItem = null;
-            if (editId) {
-                targetItem = storeMenu.find(m => m.id === parseInt(editId, 10));
-                if (targetItem) {
-                    Object.assign(targetItem, itemPayload);
-                    showToast(`✓ Đã cập nhật món "${name}" thành công!`, 'success');
-                }
-            } else {
-                targetItem = {
-                    id: Date.now(),
-                    ...itemPayload,
-                    available: available
-                };
-                storeMenu.push(targetItem);
-                showToast(`✓ Đã thêm món mới: "${name}"`, 'success');
-            }
-
-            localStorage.setItem('admin_store_menu', JSON.stringify(storeMenu));
-
-            // Tự động đồng bộ lên Neon Backend API theo thời gian thực
-            fetch('/api/menu', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(itemPayload)
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data && data.success && data.data && data.data.ItemID) {
-                    targetItem.id = data.data.ItemID;
-                    localStorage.setItem('admin_store_menu', JSON.stringify(storeMenu));
-                }
-            })
-            .catch(() => {});
-
-            // Bắn tín hiệu đồng bộ Real-time sang POS & Waiter Order
-            if (syncChannel) {
-                syncChannel.postMessage({ type: 'MENU_UPDATED', timestamp: Date.now() });
-            }
-
             closeMenuModal();
-            renderMenu();
+            adminSave('POST', '/api/menu', itemPayload,
+                editId ? `✓ Đã cập nhật món "${name}"` : `✓ Đã thêm món mới: "${name}"`)
+                .then(() => { if (syncChannel) syncChannel.postMessage({ type: 'MENU_UPDATED', timestamp: Date.now() }); });
         }
 
-        function deleteMenuItem(id) {
+        async function deleteMenuItem(id) {
             const item = storeMenu.find(m => m.id === id);
             if (!item) return;
-
             if (confirm(`Bạn có chắc muốn xóa món "${item.name}" khỏi thực đơn?`)) {
-                storeMenu = storeMenu.filter(m => m.id !== id);
-                localStorage.setItem('admin_store_menu', JSON.stringify(storeMenu));
-                
-                if (syncChannel) {
-                    syncChannel.postMessage({ type: 'MENU_UPDATED', timestamp: Date.now() });
-                }
-
-                // Gửi lệnh xóa lên Neon API
-                fetch(`/api/menu/${id}`, { method: 'DELETE' }).catch(() => {});
-
-                renderMenu();
-                showToast(`✓ Đã xóa món "${item.name}"`, 'info');
+                await adminSave('DELETE', `/api/menu/${id}`, null, `✓ Đã xóa món "${item.name}"`);
+                if (syncChannel) syncChannel.postMessage({ type: 'MENU_UPDATED', timestamp: Date.now() });
             }
         }
 
@@ -1635,36 +1516,18 @@
                 return;
             }
 
-            storeToppings.push({
-                id: 'top-' + Date.now(),
-                name: name,
-                price: price
-            });
-
-            localStorage.setItem('admin_store_toppings', JSON.stringify(storeToppings));
             nameInput.value = '';
             priceInput.value = '';
-            renderToppingsManager();
-            showToast(`✓ Đã thêm topping "${name}" (+${new Intl.NumberFormat('vi-VN').format(price)}đ)`, 'success');
-
-            if (syncChannel) {
-                syncChannel.postMessage({ type: 'TOPPINGS_UPDATED', timestamp: Date.now() });
-            }
+            adminSave('POST', '/api/toppings', { name, price }, `✓ Đã thêm topping "${name}"`)
+                .then(() => { if (syncChannel) syncChannel.postMessage({ type: 'TOPPINGS_UPDATED', timestamp: Date.now() }); });
         }
 
-        function deleteStoreTopping(id) {
-            const topping = storeToppings.find(t => t.id === id);
+        async function deleteStoreTopping(id) {
+            const topping = storeToppings.find(t => String(t.id) === String(id));
             if (!topping) return;
-
             if (confirm(`Bạn có chắc chắn muốn xóa topping "${topping.name}"?`)) {
-                storeToppings = storeToppings.filter(t => t.id !== id);
-                localStorage.setItem('admin_store_toppings', JSON.stringify(storeToppings));
-                renderToppingsManager();
-                showToast(`✓ Đã xóa topping "${topping.name}"`, 'info');
-
-                if (syncChannel) {
-                    syncChannel.postMessage({ type: 'TOPPINGS_UPDATED', timestamp: Date.now() });
-                }
+                await adminSave('DELETE', `/api/toppings/${id}`, null, `✓ Đã xóa topping "${topping.name}"`);
+                if (syncChannel) syncChannel.postMessage({ type: 'TOPPINGS_UPDATED', timestamp: Date.now() });
             }
         }
 
@@ -1867,7 +1730,7 @@
             }
         }
 
-        function saveStaffForm() {
+        async function saveStaffForm() {
             const editId = document.getElementById('staff-edit-id').value;
             const name = document.getElementById('staff-name-input').value.trim();
             const role = document.getElementById('staff-role-input').value;
@@ -1883,86 +1746,20 @@
                 pin = pin.padStart(4, '0').slice(-4);
             }
 
-            let savedStaff = null;
-
-            if (editId) {
-                const staff = storeStaff.find(s => s.id === parseInt(editId, 10));
-                if (staff) {
-                    staff.name = name;
-                    staff.role = role;
-                    staff.phone = phone;
-                    staff.username = username;
-                    staff.pin = pin;
-                    savedStaff = staff;
-                    showToast(`✓ Đã cập nhật nhân viên "${name}" (${role})`, 'success');
-                }
-            } else {
-                const newStaff = {
-                    id: Date.now(),
-                    name: name,
-                    username: username,
-                    role: role,
-                    phone: phone,
-                    pin: pin,
-                    status: 'active'
-                };
-                storeStaff.push(newStaff);
-                savedStaff = newStaff;
-                showToast(`✓ Đã cấp tài khoản cho nhân sự mới: "${name}"`, 'success');
-            }
-
-            localStorage.setItem('admin_store_staff', JSON.stringify(storeStaff));
             closeStaffModal();
-            renderStaff();
+            const r = await adminSave('POST', '/api/staff', {
+                id: editId ? parseInt(editId, 10) : null, name, role, phone, username, pin
+            }, editId ? `✓ Đã cập nhật nhân viên "${name}" (${role})` : `✓ Đã cấp tài khoản cho nhân sự mới: "${name}"`);
 
-            // Đồng bộ qua BroadcastChannel
-            try {
-                const bus = new BroadcastChannel('pos_system_bus');
-                bus.postMessage({ type: 'STAFF_UPDATED', staff: storeStaff });
-            } catch (e) {}
-
-            // Gửi nền API để đồng bộ trực tiếp lên Neon DB
-            try {
-                const apiPayload = {
-                    ...savedStaff,
-                    id: editId ? parseInt(editId, 10) : null
-                };
-                fetch('/api/staff', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(apiPayload)
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data && data.success && data.data && data.data.UserID) {
-                        savedStaff.id = data.data.UserID;
-                        localStorage.setItem('admin_store_staff', JSON.stringify(storeStaff));
-                    }
-                })
-                .catch(() => {});
-            } catch (e) {}
-
-            // Tự động mở cửa sổ thông tin đăng nhập cấp cho nhân viên ngay lập tức!
-            if (savedStaff) {
-                setTimeout(() => {
-                    openCredentialsModal(savedStaff.id);
-                }, 200);
-            }
+            // Mở thông tin đăng nhập vừa cấp để đưa cho nhân viên
+            if (r.ok && r.json.data) setTimeout(() => openCredentialsModal(r.json.data.id), 200);
         }
 
-        function deleteStaff(id) {
+        async function deleteStaff(id) {
             const staff = storeStaff.find(s => s.id === id);
             if (!staff) return;
-
             if (confirm(`Bạn có chắc muốn xóa nhân sự "${staff.name}" (${staff.role}) khỏi hệ thống?`)) {
-                storeStaff = storeStaff.filter(s => s.id !== id);
-                localStorage.setItem('admin_store_staff', JSON.stringify(storeStaff));
-                renderStaff();
-                showToast(`✓ Đã xóa tài khoản "${staff.name}"`, 'info');
-
-                try {
-                    fetch(`/api/staff/${id}`, { method: 'DELETE' }).catch(() => {});
-                } catch (e) {}
+                await adminSave('DELETE', `/api/staff/${id}`, null, `✓ Đã xóa tài khoản "${staff.name}"`);
             }
         }
 
@@ -2054,9 +1851,42 @@
         // ==========================================
         // 4. QUẢN LÝ HÓA ĐƠN (CHỈ DÀNH CHO ADMIN)
         // ==========================================
-        function refreshInvoicesList() {
-            const history = JSON.parse(localStorage.getItem('pos_invoices_history') || '[]');
+        let invoicesDate = '';
+        function renderInvoicesSummary(history) {
             const tbody = document.getElementById('store-invoices-body');
+            const table = tbody.closest('table');
+            let bar = document.getElementById('store-invoices-summary');
+            if (!bar) {
+                bar = document.createElement('div');
+                bar.id = 'store-invoices-summary';
+                bar.className = 'px-5 py-3 border-b border-slate-800 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs';
+                table.parentNode.insertBefore(bar, table);
+            }
+            const ok = history.filter(i => i.status !== 'Cancelled');
+            const sum = (arr) => arr.reduce((t, i) => t + (i.totalAmount || 0), 0);
+            const fmt = (n) => new Intl.NumberFormat('vi-VN').format(Math.round(n)) + ' đ';
+            const cash = sum(ok.filter(i => i.payMethod === 'Tiền mặt'));
+            const qr = sum(ok.filter(i => i.payMethod === 'VietQR Napas'));
+            const card = sum(ok.filter(i => i.payMethod === 'Thẻ POS'));
+            const cancelled = history.length - ok.length;
+            bar.innerHTML = `
+                <label class="text-slate-400">Ngày:
+                    <input type="date" id="invoices-date-input" value="${invoicesDate}" class="ml-1 px-2 py-1 bg-slate-800 border border-slate-700 rounded-lg text-white"
+                        onchange="invoicesDate = this.value; refreshInvoicesList();">
+                </label>
+                <span class="text-slate-400">Doanh thu: <strong class="text-emerald-400 font-mono">${fmt(sum(ok))}</strong> (${ok.length} HĐ)</span>
+                <span class="text-slate-400">Tiền mặt: <strong class="text-white font-mono">${fmt(cash)}</strong></span>
+                <span class="text-slate-400">VietQR: <strong class="text-white font-mono">${fmt(qr)}</strong></span>
+                <span class="text-slate-400">Thẻ: <strong class="text-white font-mono">${fmt(card)}</strong></span>
+                <span class="text-slate-400">Đã hủy: <strong class="${cancelled ? 'text-rose-400' : 'text-white'}">${cancelled}</strong></span>`;
+        }
+
+        async function refreshInvoicesList() {
+            const r = await CafeStore.loadInvoices(invoicesDate);
+            if (r.ok) adminInvoices = r.json.data;
+            const history = adminInvoices;
+            const tbody = document.getElementById('store-invoices-body');
+            renderInvoicesSummary(history);
 
             if (history.length === 0) {
                 tbody.innerHTML = `
@@ -2070,7 +1900,7 @@
             }
 
             tbody.innerHTML = history.map(inv => {
-                const isVoided = inv.status === 'voided';
+                const isVoided = inv.status === 'Cancelled';
                 return `
                     <tr class="hover:bg-slate-850/50 transition-colors ${isVoided ? 'opacity-50 line-through' : ''}">
                         <td class="py-3 px-5 font-mono font-bold text-amber-400">${inv.code}</td>
@@ -2086,9 +1916,10 @@
                             </span>
                         </td>
                         <td class="py-3 px-5 text-right space-x-1.5">
+                            ${isVoided ? `<span class="text-[10px] text-slate-500">${inv.cancelledBy || ''}</span>` : `
                             <button onclick="openInvoiceActionModal('${inv.code}')" class="px-2.5 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/40 font-bold text-[11px] transition-all">
                                 🛡️ Quản Lý Đơn
-                            </button>
+                            </button>`}
                         </td>
                     </tr>
                 `;
@@ -2096,8 +1927,7 @@
         }
 
         function openInvoiceActionModal(code) {
-            const history = JSON.parse(localStorage.getItem('pos_invoices_history') || '[]');
-            const inv = history.find(i => i.code === code);
+            const inv = adminInvoices.find(i => i.code === code);
             if (!inv) return;
 
             activeInvoiceCode = code;
@@ -2105,8 +1935,9 @@
             document.getElementById('modal-inv-table').textContent = inv.tableName;
             document.getElementById('modal-inv-time').textContent = inv.time;
             document.getElementById('modal-inv-total').textContent = inv.total;
-            document.getElementById('modal-inv-paymethod').value = inv.payMethod;
-            document.getElementById('modal-inv-reason').value = inv.voidReason || '';
+            document.getElementById('modal-inv-paymethod').value =
+                { 'VietQR Napas': 'vietqr', 'Tiền mặt': 'cash', 'Thẻ POS': 'card' }[inv.payMethod] || 'cash';
+            document.getElementById('modal-inv-reason').value = '';
             document.getElementById('modal-invoice-action').classList.remove('hidden');
         }
 
@@ -2114,24 +1945,20 @@
             document.getElementById('modal-invoice-action').classList.add('hidden');
         }
 
-        function confirmUpdateInvoice() {
-            const history = JSON.parse(localStorage.getItem('pos_invoices_history') || '[]');
-            const inv = history.find(i => i.code === activeInvoiceCode);
-            if (!inv) return;
-
+        async function confirmUpdateInvoice() {
             const newMethod = document.getElementById('modal-inv-paymethod').value;
-            const reason = document.getElementById('modal-inv-reason').value.trim();
-
-            inv.payMethod = newMethod;
-            if (reason) inv.adminNote = reason;
-            localStorage.setItem('pos_invoices_history', JSON.stringify(history));
-
+            const note = document.getElementById('modal-inv-reason').value.trim();
+            const r = await CafeStore.api('PATCH', `/api/orders/${encodeURIComponent(activeInvoiceCode)}/payment`, { payMethod: newMethod, note });
+            if (!r.ok) {
+                showToast('❌ ' + (r.json.error || 'Không cập nhật được hóa đơn'), 'warning');
+                return;
+            }
             closeInvoiceActionModal();
-            refreshInvoicesList();
+            await refreshInvoicesList();
             showToast(`✓ Đã cập nhật thành công hóa đơn ${activeInvoiceCode}!`, 'success');
         }
 
-        function confirmVoidInvoiceAdmin() {
+        async function confirmVoidInvoiceAdmin() {
             const reason = document.getElementById('modal-inv-reason').value.trim();
             if (!reason) {
                 alert('Vui lòng nhập lý do hủy hóa đơn để đối soát sổ sách!');
@@ -2142,41 +1969,34 @@
                 return;
             }
 
-            const history = JSON.parse(localStorage.getItem('pos_invoices_history') || '[]');
-            const inv = history.find(i => i.code === activeInvoiceCode);
-            if (inv) {
-                inv.status = 'voided';
-                inv.voidReason = reason;
-                localStorage.setItem('pos_invoices_history', JSON.stringify(history));
-                closeInvoiceActionModal();
-                refreshInvoicesList();
-                showToast(`✓ Quản lý đã hủy hóa đơn ${activeInvoiceCode} thành công.`, 'info');
+            const r = await CafeStore.voidInvoice(activeInvoiceCode, reason, '');
+            if (!r.ok) {
+                showToast('❌ ' + (r.json.error || 'Không hủy được hóa đơn'), 'warning');
+                return;
             }
+            closeInvoiceActionModal();
+            await refreshInvoicesList();
+            showToast(`✓ Quản lý đã hủy hóa đơn ${activeInvoiceCode} thành công.`, 'info');
         }
 
         // ==========================================
         // 5. CÀI ĐẶT QUÁN & VIETQR
         // ==========================================
-        function saveStoreSettings() {
+        async function saveStoreSettings() {
             const name = document.getElementById('setting-store-name').value.trim();
             const address = document.getElementById('setting-store-address').value.trim();
             const phone = document.getElementById('setting-store-phone').value.trim();
             const wifi = document.getElementById('setting-store-wifi').value.trim();
-
-            const config = { name, address, phone, wifi };
-            localStorage.setItem('store_info_config', JSON.stringify(config));
-            document.getElementById('sidebar-store-title').textContent = name;
-            showToast('✓ Đã cập nhật thông tin cửa hàng thành công!', 'success');
+            if (!name) return alert('Vui lòng nhập tên quán!');
+            await adminSave('PUT', '/api/store-settings', { name, address, phone, wifi }, '✓ Đã cập nhật thông tin cửa hàng thành công!');
         }
 
-        function saveVietQrSettings() {
+        async function saveVietQrSettings() {
             const bankCode = document.getElementById('setting-bank-code').value;
             const bankAcc = document.getElementById('setting-bank-acc').value.trim();
             const bankName = document.getElementById('setting-bank-name').value.trim();
-
-            const qrConfig = { bankCode, bankAcc, bankName };
-            localStorage.setItem('store_vietqr_config', JSON.stringify(qrConfig));
-            showToast(`✓ Đã lưu tài khoản VietQR: ${bankAcc} (${bankName})!`, 'success');
+            if (!bankAcc || !bankName) return alert('Vui lòng nhập số tài khoản và tên chủ tài khoản!');
+            await adminSave('PUT', '/api/store-settings', { bankCode, bankAcc, bankName }, `✓ Đã lưu tài khoản VietQR: ${bankAcc} (${bankName})!`);
         }
 
         function openUpgradeModal() {
@@ -2548,20 +2368,8 @@
             renderTables();
             renderMenu();
             renderStaff();
-
-            const savedInfo = JSON.parse(localStorage.getItem('store_info_config') || '{}');
-            if (savedInfo.name) {
-                document.getElementById('setting-store-name').value = savedInfo.name;
-                document.getElementById('sidebar-store-title').textContent = savedInfo.name;
-            }
-            if (savedInfo.address) document.getElementById('setting-store-address').value = savedInfo.address;
-            if (savedInfo.phone) document.getElementById('setting-store-phone').value = savedInfo.phone;
-            if (savedInfo.wifi) document.getElementById('setting-store-wifi').value = savedInfo.wifi;
-
-            const savedQr = JSON.parse(localStorage.getItem('store_vietqr_config') || '{}');
-            if (savedQr.bankCode) document.getElementById('setting-bank-code').value = savedQr.bankCode;
-            if (savedQr.bankAcc) document.getElementById('setting-bank-acc').value = savedQr.bankAcc;
-            if (savedQr.bankName) document.getElementById('setting-bank-name').value = savedQr.bankName;
+            syncAdminData();
+            CafeStore.on('online', () => syncAdminData());
         });
     </script>
 

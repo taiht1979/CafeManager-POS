@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node api/index.js",
     "dev": "node --watch api/index.js",
+    "test": "node --test tests/api.test.js",
     "test:db": "node -e \"require('./api/db.js').testConnection()\""
   },
   "dependencies": {

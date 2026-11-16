@@ -17,8 +17,6 @@
         {
             id: 5,
             username: 'superadmin',
-            password: 'SuperAdmin@2026!',
-            pin: '9999',
             aliases: ['superadmin', 'saasadmin', 'root'],
             fullName: 'Quản Trị Viên SaaS (Root)',
             role: 'SuperAdmin',
@@ -32,8 +30,6 @@
         {
             id: 1,
             username: 'manager',
-            password: 'Manager@2026!',
-            pin: '8888',
             aliases: ['manager', 'owner', 'aroma_owner', 'admin', 'chuquan'],
             fullName: 'Lê Hữu Nghĩa (Chủ Quán)',
             role: 'StoreOwner',
@@ -47,8 +43,6 @@
         {
             id: 2,
             username: 'cashier',
-            password: 'Cashier@1234!',
-            pin: '1234',
             aliases: ['cashier', 'thungan', 'pos'],
             fullName: 'Trần Thu Ngân',
             role: 'Cashier',
@@ -62,8 +56,6 @@
         {
             id: 3,
             username: 'waiter',
-            password: 'Waiter@2345!',
-            pin: '2345',
             aliases: ['order', 'waiter', 'phucvu', 'nhanvienorder'],
             fullName: 'Hoàng Nhân (Order)',
             role: 'Waiter',
@@ -77,8 +69,6 @@
         {
             id: 4,
             username: 'barista',
-            password: 'Barista@3456!',
-            pin: '3456',
             aliases: ['barista', 'phache', 'kds', 'bep'],
             fullName: 'Nguyễn Văn Barista',
             role: 'Barista',
@@ -139,6 +129,8 @@
          */
         getCurrentUser() {
             try {
+                const token = localStorage.getItem(STORAGE_KEY_TOKEN) || '';
+                if (!token || token.startsWith('mock_')) return null;
                 const raw = localStorage.getItem(STORAGE_KEY_USER);
                 return raw ? JSON.parse(raw) : null;
             } catch (e) {
@@ -235,142 +227,17 @@
         },
 
         /**
-         * Lấy toàn bộ danh sách users bao gồm tài khoản mặc định và nhân viên mới tạo từ Store Admin
-         */
-        getAllUsers() {
-            let localStaff = [];
-            try {
-                const raw = localStorage.getItem('admin_store_staff');
-                if (raw) localStaff = JSON.parse(raw);
-            } catch (e) {}
-
-            const customUsers = (Array.isArray(localStaff) ? localStaff : [])
-                .filter(s => s && s.status !== 'inactive')
-                .map(s => {
-                    const cleanPhone = (s.phone || '').replace(/\D/g, '');
-                    const role = s.role || 'Waiter';
-                    const roleConfig = {
-                        'Manager': { role: 'StoreOwner', roleName: 'Quản Lý / Chủ Quán', icon: '👑', screen: 'store-admin-dashboard.html' },
-                        'Cashier': { role: 'Cashier', roleName: 'Thu Ngân POS', icon: '💻', screen: 'pos.html' },
-                        'Waiter': { role: 'Waiter', roleName: 'Nhân Viên Order', icon: '📱', screen: 'waiter-order.html' },
-                        'Barista': { role: 'Barista', roleName: 'Quầy Pha Chế', icon: '☕', screen: 'barista.html' }
-                    }[role] || { role: role, roleName: role, icon: '👤', screen: this.getDefaultScreenForRole(role) };
-
-                    const cleanU = (s.username || '').trim().toLowerCase() || ('nv_' + s.id);
-
-                    return {
-                        id: s.id,
-                        username: cleanU,
-                        password: s.password || s.pin || '1234',
-                        pin: String(s.pin || '1234').trim(),
-                        aliases: [
-                            cleanU,
-                            (s.phone || '').trim().toLowerCase(),
-                            cleanPhone,
-                            (s.name || '').trim().toLowerCase()
-                        ].filter(Boolean),
-                        fullName: s.name,
-                        phone: s.phone,
-                        role: roleConfig.role,
-                        roleName: roleConfig.roleName,
-                        roleIcon: roleConfig.icon,
-                        storeId: 1,
-                        storeName: 'Aroma Coffee Roastery',
-                        defaultScreen: roleConfig.screen,
-                        description: `Nhân viên ${roleConfig.roleName}`
-                    };
-                });
-
-            // Gộp danh sách: mặc định + nhân viên mới tạo (không trùng lặp username)
-            const defaultUsernames = new Set(this.users.map(u => u.username.toLowerCase()));
-            const uniqueCustom = customUsers.filter(cu => !defaultUsernames.has(cu.username));
-            return [...this.users, ...uniqueCustom];
-        },
-
-        /**
-         * Đăng nhập bằng Tên đăng nhập và Mật khẩu (hoặc PIN)
+         * Đăng nhập bằng Tên đăng nhập và Mật khẩu (hoặc PIN). Chỉ xác thực qua máy chủ.
          */
         async login({ username, password, pin, remember = true }) {
             const cleanUser = String(username || '').trim().toLowerCase();
             const cleanPin = String(pin || '').trim();
-
-            // Gọi backend API nếu có mạng
-            try {
-                const response = await fetch('/api/auth/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: cleanUser, password, pin: cleanPin })
-                });
-                const data = await response.json();
-                if (response.ok && data.success && data.user) {
-                    this._saveSession(data.user, data.token, remember ? { username: cleanUser, pin: cleanPin } : null);
-                    return { success: true, user: data.user, defaultScreen: data.user.defaultScreen };
-                }
-            } catch (err) {}
-
-            // Client-side fallback authentication với kiểm tra danh sách toàn bộ người dùng (gồm cả nhân viên mới tạo)
-            const allUsers = this.getAllUsers();
-            let matchedUser = null;
-
-            if (cleanPin) {
-                matchedUser = allUsers.find(u => u.pin === cleanPin);
-                if (!matchedUser) {
-                    return {
-                        success: false,
-                        error: 'Mã PIN không chính xác! Vui lòng kiểm tra lại.'
-                    };
-                }
-            } else if (cleanUser) {
-                const cleanPhone = cleanUser.replace(/\D/g, '');
-                matchedUser = allUsers.find(u => 
-                    u.username.toLowerCase() === cleanUser || 
-                    (u.phone && cleanPhone.length >= 8 && u.phone.replace(/\D/g, '') === cleanPhone) ||
-                    (u.aliases && u.aliases.includes(cleanUser))
-                );
-
-                if (!matchedUser) {
-                    return {
-                        success: false,
-                        error: 'Tài khoản không tồn tại trong hệ thống!'
-                    };
-                }
-
-                // KIỂM TRA MẬT KHẨU HOẶC PIN CHẶT CHẼ
-                const isValidPass = password && (password === matchedUser.password || password === matchedUser.pin);
-                if (!isValidPass) {
-                    return {
-                        success: false,
-                        error: 'Mật khẩu không chính xác! Vui lòng kiểm tra lại.'
-                    };
-                }
-            } else {
-                return {
-                    success: false,
-                    error: 'Vui lòng nhập tên đăng nhập hoặc mã PIN!'
-                };
+            if (!cleanUser && !cleanPin) {
+                return { success: false, error: 'Vui lòng nhập tên đăng nhập hoặc mã PIN!' };
             }
-
-            const sessionUser = {
-                id: matchedUser.id,
-                username: matchedUser.username,
-                fullName: matchedUser.fullName,
-                role: matchedUser.role,
-                roleName: matchedUser.roleName,
-                roleIcon: matchedUser.roleIcon,
-                storeId: matchedUser.storeId,
-                storeName: matchedUser.storeName,
-                defaultScreen: matchedUser.defaultScreen || this.getDefaultScreenForRole(matchedUser.role),
-                loginAt: new Date().toISOString()
-            };
-
-            const mockToken = 'mock_jwt_token_' + Date.now();
-            this._saveSession(sessionUser, mockToken, remember ? { username: matchedUser.username, pin: matchedUser.pin } : null);
-
-            return {
-                success: true,
-                user: sessionUser,
-                defaultScreen: sessionUser.defaultScreen
-            };
+            return this._requestLogin('/api/auth/login',
+                { username: cleanUser, password, pin: cleanPin },
+                remember ? { username: cleanUser, pin: cleanPin } : null);
         },
 
         /**
@@ -381,41 +248,26 @@
             if (!cleanPin || cleanPin.length < 4) {
                 return { success: false, error: 'Vui lòng nhập đủ 4 số mã PIN!' };
             }
+            return this._requestLogin('/api/auth/pin', { pin: cleanPin }, remember ? { pin: cleanPin } : null);
+        },
 
+        async _requestLogin(url, payload, rememberCredentials) {
+            let response, data;
             try {
-                const response = await fetch('/api/auth/pin', {
+                response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ pin: cleanPin })
+                    body: JSON.stringify(payload)
                 });
-                const data = await response.json();
-                if (response.ok && data.success && data.user) {
-                    this._saveSession(data.user, data.token, remember ? { pin: cleanPin } : null);
-                    return { success: true, user: data.user, defaultScreen: data.user.defaultScreen };
-                }
-            } catch (e) {}
-
-            const allUsers = this.getAllUsers();
-            const matchedUser = allUsers.find(u => u.pin === cleanPin);
-            if (!matchedUser) {
-                return { success: false, error: 'Mã PIN ' + cleanPin + ' không tồn tại trong hệ thống!' };
+                data = await response.json();
+            } catch (err) {
+                return { success: false, error: 'Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.' };
             }
-
-            const sessionUser = {
-                id: matchedUser.id,
-                username: matchedUser.username,
-                fullName: matchedUser.fullName,
-                role: matchedUser.role,
-                roleName: matchedUser.roleName,
-                roleIcon: matchedUser.roleIcon,
-                storeId: matchedUser.storeId,
-                storeName: matchedUser.storeName,
-                defaultScreen: matchedUser.defaultScreen || this.getDefaultScreenForRole(matchedUser.role),
-                loginAt: new Date().toISOString()
-            };
-
-            this._saveSession(sessionUser, 'mock_pin_token_' + Date.now(), remember ? { pin: cleanPin } : null);
-            return { success: true, user: sessionUser, defaultScreen: sessionUser.defaultScreen };
+            if (response.ok && data.success && data.user && data.token) {
+                this._saveSession(data.user, data.token, rememberCredentials);
+                return { success: true, user: data.user, defaultScreen: data.user.defaultScreen };
+            }
+            return { success: false, error: data.error || 'Đăng nhập thất bại. Vui lòng thử lại.' };
         },
 
         /**
@@ -435,13 +287,6 @@
                     savedAt: new Date().toISOString()
                 });
             }
-
-            try {
-                if (user.role === 'Waiter') {
-                    const staff = [{ id: user.id, name: user.fullName, role: 'Waiter', active: true }];
-                    localStorage.setItem('admin_store_staff', JSON.stringify(staff));
-                }
-            } catch (e) {}
 
             try {
                 const bc = new BroadcastChannel('cafemanager_auth_channel');

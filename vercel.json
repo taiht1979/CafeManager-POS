@@ -58,7 +58,7 @@
     },
     {
       "src": "/",
-      "dest": "/frontend/index.html"
+      "dest": "/frontend/login.html"
     }
   ]
 }

@@ -81,6 +81,7 @@
             50% { border-color: rgba(245, 158, 11, 0.3); box-shadow: 0 0 4px rgba(245, 158, 11, 0.1); }
         }
     </style>
+    <script src="js/cafe-store.js"></script>
     <script src="js/auth.js"></script>
 </head>
 <body class="h-full font-sans antialiased bg-slate-950 text-slate-100 flex flex-col">
@@ -99,13 +100,13 @@
             </a>
             <div>
                 <div class="flex items-center gap-2">
-                    <h1 class="text-sm font-black text-white leading-tight tracking-tight" id="header-store-name">Aroma Coffee Roastery</h1>
+                    <h1 class="text-sm font-black text-white leading-tight tracking-tight" id="header-store-name">Đang tải...</h1>
                     <span class="text-[9px] px-2 py-0.5 rounded-full font-black bg-amber-500 text-slate-950 font-mono tracking-wider">THU NGÂN & TÍNH TIỀN</span>
                 </div>
                 <div class="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
                     <span class="flex items-center gap-1 font-semibold text-emerald-400">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                        <span id="cashier-staff-name">Trần Thu Ngân</span>
+                        <span id="cashier-staff-name"></span>
                     </span>
                     <span class="text-slate-600">•</span>
                     <span id="cashier-shift-badge">Ca chiều (14h - 22h)</span>
@@ -376,7 +377,7 @@
                     <img id="pos-vietqr-img" src="" alt="Mã VietQR Thanh Toán" class="w-24 h-24 object-contain border border-slate-200 rounded-lg shrink-0">
                     <div class="flex-1 text-left">
                         <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Mã Quét Thanh Toán Động</div>
-                        <div class="text-xs font-black text-slate-900 mt-0.5" id="qr-bank-display">MB Bank • 99998888</div>
+                        <div class="text-xs font-black text-slate-900 mt-0.5" id="qr-bank-display"></div>
                         <div class="text-[10px] text-emerald-600 font-bold mt-1 flex items-center gap-1">
                             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                             <span>Tự động nhận diện biến động số dư</span>
@@ -466,9 +467,9 @@
             <div class="flex-1 overflow-y-auto p-4 bg-slate-950 flex justify-center">
                 <div id="printable-receipt" class="k80-print-box w-[78mm] bg-white text-slate-900 p-4 font-mono text-[11px] leading-tight shadow-md rounded">
                     <div class="text-center pb-2 border-b border-dashed border-slate-400">
-                        <div class="font-extrabold text-sm tracking-wider" id="rec-brand-name">AROMA COFFEE ROASTERY</div>
-                        <div class="text-[9px] text-slate-600" id="rec-brand-addr">123 Đường Hoa Lan, Q. Phú Nhuận, TP.HCM</div>
-                        <div class="text-[9px] text-slate-600">Hotline: 0901 112 222 • Wifi: Aroma@8888</div>
+                        <div class="font-extrabold text-sm tracking-wider" id="rec-brand-name"></div>
+                        <div class="text-[9px] text-slate-600" id="rec-brand-addr"></div>
+                        <div class="text-[9px] text-slate-600" id="rec-brand-contact"></div>
                     </div>
 
                     <div class="py-2 border-b border-dashed border-slate-400 text-[10px] space-y-0.5">
@@ -542,7 +543,7 @@
             <div class="flex-1 overflow-y-auto p-4 bg-slate-950 flex justify-center">
                 <div id="printable-prebill" class="k80-print-box w-[78mm] bg-white text-slate-900 p-4 font-mono text-[11px] leading-tight shadow-md rounded">
                     <div class="text-center pb-2 border-b border-dashed border-slate-400">
-                        <div class="font-extrabold text-sm tracking-wider">AROMA COFFEE ROASTERY</div>
+                        <div class="font-extrabold text-sm tracking-wider" id="prebill-brand-name"></div>
                         <div class="font-bold text-xs mt-1">PHIẾU TẠM TÍNH (KIỂM MÓN)</div>
                         <div class="text-[8px] text-slate-500 italic">(Chưa phải hóa đơn thanh toán)</div>
                     </div>
@@ -905,84 +906,14 @@
             return new Intl.NumberFormat('vi-VN').format(Math.round(amount || 0)) + ' đ';
         }
 
-        // Customer CRM mock
-        const customersDB = {
-            '0901234567': { name: 'Nguyễn Văn An', tier: 'Vàng', discountPercent: 10, points: 450 },
-            '0988765432': { name: 'Trần Thị Mai', tier: 'Bạc', discountPercent: 5, points: 180 },
-            '0912348899': { name: 'Lê Hoàng Nam', tier: 'Kim Cương', discountPercent: 15, points: 920 }
-        };
+        // CRM chưa có trên server: không áp dụng khách quen/giảm giá thành viên.
+        const customersDB = {};
 
         // State variables
-        let storeTables = JSON.parse(localStorage.getItem('admin_store_tables') || 'null');
-        if (!storeTables || storeTables.length === 0) {
-            storeTables = [
-                { id: 1, name: 'Bàn 01', area: 'Tầng 1 - Máy Lạnh', capacity: 4, status: 'active' },
-                { id: 2, name: 'Bàn 02', area: 'Tầng 1 - Máy Lạnh', capacity: 4, status: 'active' },
-                { id: 3, name: 'Bàn 03', area: 'Sân Vườn Nhiệt Đới', capacity: 6, status: 'active' },
-                { id: 4, name: 'Bàn 04', area: 'Sân Vườn Nhiệt Đới', capacity: 4, status: 'active' },
-                { id: 5, name: 'Bàn 05', area: 'Sân Vườn Nhiệt Đới', capacity: 2, status: 'active' },
-                { id: 6, name: 'Bàn VIP 01', area: 'Phòng Lạnh VIP', capacity: 8, status: 'active' },
-                { id: 7, name: 'Bàn VIP 02', area: 'Phòng Lạnh VIP', capacity: 6, status: 'active' },
-                { id: 8, name: 'Bàn Ban Công 01', area: 'Tầng Lầu Ban Công', capacity: 4, status: 'active' },
-                { id: 9, name: 'Bàn Ban Công 02', area: 'Tầng Lầu Ban Công', capacity: 4, status: 'active' }
-            ];
-            localStorage.setItem('admin_store_tables', JSON.stringify(storeTables));
-        }
-
-        let tableOrders = JSON.parse(localStorage.getItem('pos_table_orders') || 'null');
-        // Nạp đơn hàng mẫu thực tế cho 3 bàn nếu chưa có để thu ngân có dữ liệu thao tác ngay
-        if (!tableOrders || Object.keys(tableOrders).length === 0) {
-            tableOrders = {
-                '1': {
-                    cart: [
-                        { id: 1, name: 'Cà Phê Muối Đặc Biệt', unitPrice: 35000, quantity: 2, emoji: '☕', note: 'Size M • 100% Đá', itemTotal: 70000 },
-                        { id: 6, name: 'Bánh Tiramisu Truyền Thống', unitPrice: 40000, quantity: 1, emoji: '🍰', note: 'Chuẩn', itemTotal: 40000 }
-                    ],
-                    customer: null,
-                    orderMode: 'dine-in',
-                    status: 'occupied',
-                    openedAt: Date.now() - 32 * 60 * 1000, // 32 phút trước
-                    directDiscount: 0
-                },
-                '3': {
-                    cart: [
-                        { id: 2, name: 'Trà Sen Vàng Hạt Dẻ', unitPrice: 55000, quantity: 2, emoji: '🪷', note: 'Size L • +Trân Châu Trắng', itemTotal: 110000 },
-                        { id: 4, name: 'Trà Đào Cam Sả Tươi', unitPrice: 42000, quantity: 1, emoji: '🍑', note: 'Size M • Ít đường', itemTotal: 42000 },
-                        { id: 5, name: 'Matcha Đá Xay Hạnh Nhân', unitPrice: 48000, quantity: 1, emoji: '🍃', note: 'Size M • Kem tươi', itemTotal: 48000 }
-                    ],
-                    customer: { name: 'Nguyễn Văn An', phone: '0901234567', tier: 'Vàng', discountPercent: 10, points: 450 },
-                    orderMode: 'dine-in',
-                    status: 'billing', // Khách gọi tính tiền / Đã in tạm tính
-                    openedAt: Date.now() - 48 * 60 * 1000, // 48 phút trước
-                    directDiscount: 0
-                },
-                '6': {
-                    cart: [
-                        { id: 1, name: 'Cà Phê Muối Đặc Biệt', unitPrice: 35000, quantity: 4, emoji: '☕', note: 'Size M • Uống tại bàn', itemTotal: 140000 },
-                        { id: 3, name: 'Cà Phê Sữa Đá Sài Gòn', unitPrice: 29000, quantity: 2, emoji: '🥤', note: 'Size M • Đậm vị', itemTotal: 58000 }
-                    ],
-                    customer: null,
-                    orderMode: 'dine-in',
-                    status: 'occupied',
-                    openedAt: Date.now() - 18 * 60 * 1000, // 18 phút trước
-                    directDiscount: 0
-                },
-                'takeaway': {
-                    cart: [
-                        { id: 2, name: 'Trà Sen Vàng Hạt Dẻ', unitPrice: 45000, quantity: 1, emoji: '🪷', note: 'Mang đi túi đôi', itemTotal: 45000 },
-                        { id: 3, name: 'Cà Phê Sữa Đá Sài Gòn', unitPrice: 29000, quantity: 1, emoji: '🥤', note: 'Mang đi', itemTotal: 29000 }
-                    ],
-                    customer: null,
-                    orderMode: 'take-away',
-                    status: 'occupied',
-                    openedAt: Date.now() - 8 * 60 * 1000,
-                    directDiscount: 0
-                }
-            };
-            localStorage.setItem('pos_table_orders', JSON.stringify(tableOrders));
-        }
-
-        let invoicesHistory = JSON.parse(localStorage.getItem('pos_invoices_history') || '[]');
+        // Dữ liệu bàn/đơn/hóa đơn đến từ server (CafeStore). localStorage chỉ là bộ nhớ đệm.
+        let storeTables = JSON.parse(localStorage.getItem('admin_store_tables') || '[]');
+        let tableOrders = CafeStore.readOpen();
+        let invoicesHistory = [];
         let pettyCashList = JSON.parse(localStorage.getItem('pos_petty_cash') || '[]');
 
         let currentSelectedTableId = '3'; // Mặc định mở ngay bàn đang chờ thanh toán
@@ -998,15 +929,7 @@
         // Lấy danh sách menu để phục vụ thêm món nhanh tại quầy
         function getActiveMenu() {
             const adminMenu = JSON.parse(localStorage.getItem('admin_store_menu') || 'null');
-            if (adminMenu && adminMenu.length > 0) return adminMenu;
-            return [
-                { id: 1, name: 'Cà Phê Muối Đặc Biệt', price: 35000, cat: 'Cà Phê', img: '☕' },
-                { id: 2, name: 'Trà Sen Vàng Hạt Dẻ', price: 45000, cat: 'Trà', img: '🪷' },
-                { id: 3, name: 'Cà Phê Sữa Đá Sài Gòn', price: 29000, cat: 'Cà Phê', img: '🥤' },
-                { id: 4, name: 'Trà Đào Cam Sả Tươi', price: 42000, cat: 'Trà', img: '🍑' },
-                { id: 5, name: 'Matcha Đá Xay Hạnh Nhân', price: 48000, cat: 'Đá Xay', img: '🍃' },
-                { id: 6, name: 'Bánh Tiramisu Truyền Thống', price: 40000, cat: 'Bánh', img: '🍰' }
-            ];
+            return Array.isArray(adminMenu) ? adminMenu.filter(m => m.available !== false) : [];
         }
 
         // =========================================================================
@@ -1020,7 +943,7 @@
         }
 
         function reloadTableOrders() {
-            tableOrders = JSON.parse(localStorage.getItem('pos_table_orders') || '{}');
+            tableOrders = CafeStore.readOpen();
             storeTables = JSON.parse(localStorage.getItem('admin_store_tables') || '[]');
             renderFloorPlan();
         }
@@ -1250,8 +1173,9 @@
             document.getElementById('count-empty-tables').textContent = emptyCount;
 
             // Doanh thu ca này
-            const shiftTotal = invoicesHistory.reduce((sum, inv) => sum + (inv.totalAmount || 0), 0);
-            document.getElementById('kpi-shift-revenue').textContent = `${formatMoney(shiftTotal)} (${invoicesHistory.length} HĐ)`;
+            const paidInvoices = invoicesHistory.filter(inv => inv.status !== 'Cancelled');
+            const shiftTotal = paidInvoices.reduce((sum, inv) => sum + (inv.totalAmount || 0), 0);
+            document.getElementById('kpi-shift-revenue').textContent = `${formatMoney(shiftTotal)} (${paidInvoices.length} HĐ)`;
         }
 
         // =========================================================================
@@ -1348,6 +1272,7 @@
             }
 
             directDiscount = order.directDiscount || 0;
+            directDiscountReason = order.directDiscountReason || '';
 
             // Render danh sách món
             listContainer.innerHTML = order.cart.map((item, idx) => `
@@ -1393,7 +1318,7 @@
                 delete tableOrders[currentSelectedTableId];
             }
 
-            localStorage.setItem('pos_table_orders', JSON.stringify(tableOrders));
+            CafeStore.saveOpenOrders(tableOrders);
             renderFloorPlan();
         }
 
@@ -1407,7 +1332,7 @@
                 delete tableOrders[currentSelectedTableId];
             }
 
-            localStorage.setItem('pos_table_orders', JSON.stringify(tableOrders));
+            CafeStore.saveOpenOrders(tableOrders);
             renderFloorPlan();
             showToast('✓ Đã xóa món khỏi hóa đơn', 'info');
         }
@@ -1418,7 +1343,7 @@
 
             if (confirm(`Bạn có chắc muốn hủy đơn và trả bàn ${currentSelectedTableId} về trạng thái Trống?`)) {
                 delete tableOrders[currentSelectedTableId];
-                localStorage.setItem('pos_table_orders', JSON.stringify(tableOrders));
+                CafeStore.saveOpenOrders(tableOrders);
                 renderFloorPlan();
                 showToast(`✓ Đã hủy bàn thành công`, 'info');
             }
@@ -1462,16 +1387,24 @@
             if (!qrImg) return;
 
             const savedQr = JSON.parse(localStorage.getItem('store_vietqr_config') || '{}');
-            const bankCode = savedQr.bankCode || 'MB';
-            const bankAcc = savedQr.bankAcc || '99998888';
-            const bankName = savedQr.bankName || 'AROMA COFFEE ROASTERY';
+            const storeInfo = JSON.parse(localStorage.getItem('store_info_config') || '{}');
+            const bankCode = savedQr.bankCode;
+            const bankAcc = savedQr.bankAcc;
+            const bankName = savedQr.bankName || '';
 
+            if (!bankCode || !bankAcc) {
+                // Chưa cấu hình tài khoản nhận tiền: không hiện QR để tránh thu nhầm vào tài khoản mẫu
+                qrImg.removeAttribute('src');
+                if (qrBankDisplay) qrBankDisplay.textContent = '⚠️ Chưa cấu hình tài khoản ngân hàng (Quản lý vào Cài đặt)';
+                return;
+            }
             if (qrBankDisplay) {
                 qrBankDisplay.textContent = `${bankCode} • ${bankAcc} (${bankName})`;
             }
 
             const tableLabel = currentSelectedTableId === 'takeaway' ? 'MANG VE' : `BAN ${currentSelectedTableId}`;
-            const addInfo = encodeURIComponent(`AROMA ${tableLabel}`);
+            const brand = (storeInfo.name || 'CAFE').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/gi, 'd').replace(/[^A-Za-z0-9 ]/g, '').toUpperCase().split(' ')[0] || 'CAFE';
+            const addInfo = encodeURIComponent(`${brand} ${tableLabel}`);
             const vietqrUrl = `https://api.vietqr.io/image/${bankCode}-${bankAcc}-compact2.jpg?amount=${totalAmount}&addInfo=${addInfo}&accountName=${encodeURIComponent(bankName)}`;
             qrImg.src = vietqrUrl;
         }
@@ -1518,55 +1451,70 @@
         // =========================================================================
         // THAO TÁC THANH TOÁN & IN BILL K80
         // =========================================================================
-        function executeCheckoutAndPrint() {
+        function applyStoreInfo() {
+            const info = JSON.parse(localStorage.getItem('store_info_config') || '{}');
+            const name = info.name || '';
+            const set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+            set('header-store-name', name || 'Quán chưa đặt tên');
+            set('rec-brand-name', name.toUpperCase());
+            set('prebill-brand-name', name.toUpperCase());
+            set('rec-brand-addr', info.address || '');
+            const contact = [info.phone ? 'Hotline: ' + info.phone : '', info.wifi ? 'Wifi: ' + info.wifi : ''].filter(Boolean).join(' • ');
+            set('rec-brand-contact', contact);
+        }
+
+        let checkoutBusy = false;
+        async function executeCheckoutAndPrint() {
+            if (checkoutBusy) return;
             const order = tableOrders[currentSelectedTableId];
             if (!order || !order.cart || order.cart.length === 0) return;
-
-            playSuccessSound();
-
-            const invCode = 'INV-' + Math.floor(100000 + Math.random() * 900000);
-            const totalText = document.getElementById('bill-final-total').textContent;
-            const totalAmount = parseInt(totalText.replace(/[^\d]/g, ''), 10) || 0;
-            const subtotalText = document.getElementById('bill-subtotal').textContent;
-            const discountText = document.getElementById('bill-discount-val').textContent;
-            const vatText = document.getElementById('bill-vat').textContent;
-
-            const tableLabel = currentSelectedTableId === 'takeaway' ? 'Đơn Mang Đi' : `Bàn 0${currentSelectedTableId}`;
-
-            // Lưu vào Lịch sử hóa đơn (Doanh thu)
-            const newInvoice = {
-                code: invCode,
-                time: new Date().toLocaleString('vi-VN'),
-                tableId: currentSelectedTableId,
-                tableName: tableLabel,
-                items: [...order.cart],
-                subtotal: subtotalText,
-                discount: discountText,
-                vat: vatText,
-                total: totalText,
-                totalAmount: totalAmount,
-                payMethod: currentPayTab === 'vietqr' ? 'VietQR Napas' : (currentPayTab === 'cash' ? 'Tiền mặt' : 'Thẻ POS'),
-                cashier: 'Trần Thu Ngân'
-            };
-
-            invoicesHistory.unshift(newInvoice);
-            localStorage.setItem('pos_invoices_history', JSON.stringify(invoicesHistory));
-
-            // Xóa bàn khỏi danh sách bàn có khách (Trả về Bàn Trống)
-            delete tableOrders[currentSelectedTableId];
-            localStorage.setItem('pos_table_orders', JSON.stringify(tableOrders));
-
-            // Bắn tín hiệu đồng bộ
-            if (syncChannel) {
-                syncChannel.postMessage({ type: 'ORDER_PAID', tableId: currentSelectedTableId, tableName: tableLabel });
+            if (!CafeStore.isOnline()) {
+                showToast('⚠️ Đang mất kết nối máy chủ, chưa thể thanh toán. Kiểm tra mạng rồi thử lại.', 'warning');
+                return;
             }
 
-            // Mở Modal Xem & In Hóa Đơn Nhiệt K80
-            openReceiptPrintModal(newInvoice);
+            checkoutBusy = true;
+            const btn = document.getElementById('btn-checkout-main');
+            if (btn) btn.disabled = true;
+            try {
+                const r = await CafeStore.checkout({
+                    tableKey: String(currentSelectedTableId),
+                    payMethod: currentPayTab,
+                    vat: document.getElementById('vat-toggle').checked,
+                    directDiscount: directDiscount,
+                    discountReason: directDiscountReason,
+                    customer: activeCustomer
+                });
+                if (!r.ok) {
+                    showToast('❌ ' + (r.json.error || 'Thanh toán thất bại, vui lòng thử lại.'), 'warning');
+                    reloadTableOrders();
+                    return;
+                }
+                playSuccessSound();
+                const invoice = r.json.data;
+                invoicesHistory.unshift(invoice);
+                tableOrders = CafeStore.readOpen();
+                directDiscount = 0;
+                directDiscountReason = '';
 
-            // Cập nhật lại sơ đồ bàn
-            renderFloorPlan();
-            showToast(`✓ Đã thanh toán thành công ${tableLabel}: ${totalText}!`, 'success');
+                if (syncChannel) {
+                    syncChannel.postMessage({ type: 'ORDER_PAID', tableId: currentSelectedTableId, tableName: invoice.tableName });
+                }
+                openReceiptPrintModal(invoice);
+                renderFloorPlan();
+                showToast(`✓ Đã thanh toán ${invoice.tableName}: ${invoice.total} (${invoice.code})`, 'success');
+            } finally {
+                checkoutBusy = false;
+                renderCurrentTableBill();
+            }
+        }
+
+        async function refreshInvoices() {
+            const r = await CafeStore.loadInvoices();
+            if (r.ok) {
+                invoicesHistory = r.json.data;
+                updateOverviewKpis();
+            }
         }
 
         // Đánh dấu bàn là "Chờ thanh toán / Đã in tạm tính"
@@ -1574,7 +1522,7 @@
             const order = tableOrders[currentSelectedTableId];
             if (order) {
                 order.status = 'billing';
-                localStorage.setItem('pos_table_orders', JSON.stringify(tableOrders));
+                CafeStore.saveOpenOrders(tableOrders);
                 renderFloorPlan();
                 showToast(`✓ Đã in tạm tính & gắn cờ Chờ Thanh Toán cho ${currentSelectedTableId}`, 'info');
             }
@@ -1658,7 +1606,7 @@
                 });
             }
 
-            localStorage.setItem('pos_table_orders', JSON.stringify(tableOrders));
+            CafeStore.saveOpenOrders(tableOrders);
             renderFloorPlan();
             showToast(`+1 ${item.name} vào ${currentSelectedTableId}!`, 'success');
         }
@@ -1703,7 +1651,7 @@
             if (!order || !order.cart || order.cart.length === 0) return;
 
             playBeep();
-            const tableLabel = currentSelectedTableId === 'takeaway' ? 'Mang đi' : `Bàn 0${currentSelectedTableId}`;
+            const tableLabel = currentSelectedTableId === 'takeaway' ? 'Mang đi' : (storeTables.find(x => String(x.id) === String(currentSelectedTableId)) || { name: `Bàn ${currentSelectedTableId}` }).name;
             document.getElementById('prebill-table').textContent = tableLabel;
             document.getElementById('prebill-time').textContent = new Date().toLocaleString('vi-VN');
 
@@ -1818,7 +1766,7 @@
                 delete tableOrders[currentSelectedTableId];
             }
 
-            localStorage.setItem('pos_table_orders', JSON.stringify(tableOrders));
+            CafeStore.saveOpenOrders(tableOrders);
             closeTransferMergeModal();
             currentSelectedTableId = targetId;
             renderFloorPlan();
@@ -1884,6 +1832,12 @@
             const reason = document.getElementById('direct-discount-reason').value.trim() || 'Giảm giá quầy';
             directDiscount = amt;
             directDiscountReason = reason;
+            const dOrder = tableOrders[currentSelectedTableId];
+            if (dOrder) {
+                dOrder.directDiscount = amt;
+                dOrder.directDiscountReason = reason;
+                CafeStore.saveOpenOrders(tableOrders);
+            }
             closeDirectDiscountModal();
             calculateBill();
             showToast(`✓ Đã áp dụng giảm trực tiếp: -${formatMoney(directDiscount)} (${reason})`, 'success');
@@ -1892,31 +1846,57 @@
         // =========================================================================
         // LỊCH SỬ HÓA ĐƠN & THU CHI KÉT & KẾT CA
         // =========================================================================
-        function openInvoiceHistoryModal() {
+        async function openInvoiceHistoryModal() {
             playBeep();
+            document.getElementById('invoice-history-modal').classList.remove('hidden');
+            await refreshInvoices();
+            renderInvoiceHistory();
+        }
+
+        function renderInvoiceHistory() {
             const tbody = document.getElementById('invoice-history-tbody');
             document.getElementById('history-total-count').textContent = invoicesHistory.length;
 
             if (invoicesHistory.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-500">Chưa có hóa đơn nào được thanh toán trong ca này</td></tr>`;
-            } else {
-                tbody.innerHTML = invoicesHistory.map((inv, idx) => `
-                    <tr class="hover:bg-slate-800/40 transition-colors">
-                        <td class="py-2.5 px-3 font-mono font-bold text-amber-400">${inv.code}</td>
+                tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-500">Chưa có hóa đơn nào được thanh toán hôm nay</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = invoicesHistory.map((inv, idx) => {
+                const cancelled = inv.status === 'Cancelled';
+                return `
+                    <tr class="hover:bg-slate-800/40 transition-colors ${cancelled ? 'opacity-60' : ''}">
+                        <td class="py-2.5 px-3 font-mono font-bold ${cancelled ? 'text-slate-500 line-through' : 'text-amber-400'}">${inv.code}</td>
                         <td class="py-2.5 px-3 text-slate-400 font-mono">${inv.time}</td>
                         <td class="py-2.5 px-3 text-white font-bold">${inv.tableName}</td>
                         <td class="py-2.5 px-3 font-mono font-bold text-white">${inv.total}</td>
-                        <td class="py-2.5 px-3 text-slate-300">${inv.payMethod}</td>
-                        <td class="py-2.5 px-3 text-right">
-                            <button onclick="openReceiptPrintModal(invoicesHistory[${idx}])" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-[11px] border border-slate-700">
-                                In lại Bill
-                            </button>
+                        <td class="py-2.5 px-3 text-slate-300">${cancelled ? '<span class="text-rose-400 font-bold">ĐÃ HỦY</span>' : inv.payMethod}</td>
+                        <td class="py-2.5 px-3 text-right whitespace-nowrap">
+                            <button onclick="openReceiptPrintModal(invoicesHistory[${idx}])" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-[11px] border border-slate-700">In lại</button>
+                            ${cancelled ? '' : `<button onclick="voidInvoiceFlow('${inv.code}')" class="ml-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-rose-950 text-rose-300 font-bold text-[11px] border border-slate-700">🔒 Hủy (Cần QL)</button>`}
                         </td>
-                    </tr>
-                `).join('');
-            }
+                    </tr>`;
+            }).join('');
+        }
 
-            document.getElementById('invoice-history-modal').classList.remove('hidden');
+        async function voidInvoiceFlow(code) {
+            const reason = prompt(`Lý do hủy hóa đơn ${code}:`);
+            if (reason === null) return;
+            if (!reason.trim()) return alert('Vui lòng nhập lý do hủy.');
+            const user = window.CafeAuth ? CafeAuth.getCurrentUser() : null;
+            const isManager = user && ['StoreOwner', 'Manager', 'StoreManager'].includes(user.role);
+            let pin = '';
+            if (!isManager) {
+                pin = prompt('Nhập mã PIN của Quản lý để duyệt hủy:');
+                if (!pin) return;
+            }
+            const r = await CafeStore.voidInvoice(code, reason.trim(), pin);
+            if (!r.ok) {
+                showToast('⛔ ' + (r.json.error || 'Không hủy được hóa đơn.'), 'warning');
+                return;
+            }
+            showToast(`✓ Đã hủy hóa đơn ${code} (duyệt bởi ${r.json.data.cancelledBy})`, 'success');
+            await refreshInvoices();
+            renderInvoiceHistory();
         }
 
         function closeInvoiceHistoryModal() {
@@ -1985,11 +1965,11 @@
 
         function openShiftHandoverModal() {
             const cashRevenue = invoicesHistory
-                .filter(i => i.payMethod === 'Tiền mặt')
+                .filter(i => i.status !== 'Cancelled' && i.payMethod === 'Tiền mặt')
                 .reduce((sum, i) => sum + (i.totalAmount || 0), 0);
 
             const qrRevenue = invoicesHistory
-                .filter(i => i.payMethod !== 'Tiền mặt')
+                .filter(i => i.status !== 'Cancelled' && i.payMethod !== 'Tiền mặt')
                 .reduce((sum, i) => sum + (i.totalAmount || 0), 0);
 
             const pettyExpenses = pettyCashList
@@ -2059,20 +2039,21 @@
                 }
             }
 
-            // Đồng bộ tên quán từ setting
-            const storeInfo = JSON.parse(localStorage.getItem('store_info_config') || '{}');
-            if (storeInfo.name) {
-                const nameEl = document.getElementById('header-store-name');
-                const recBrand = document.getElementById('rec-brand-name');
-                if (nameEl) nameEl.textContent = storeInfo.name;
-                if (recBrand) recBrand.textContent = storeInfo.name.toUpperCase();
-            }
-            if (storeInfo.address) {
-                const recAddr = document.getElementById('rec-brand-addr');
-                if (recAddr) recAddr.textContent = storeInfo.address;
-            }
+            applyStoreInfo();
 
             renderFloorPlan();
+
+            // Đồng bộ với server: bàn/menu, đơn đang mở, hóa đơn hôm nay, vé pha chế
+            CafeStore.on('open-orders', () => { reloadTableOrders(); });
+            CafeStore.on('reference', () => { applyStoreInfo(); renderCurrentTableBill(); storeTables = JSON.parse(localStorage.getItem('admin_store_tables') || '[]'); renderFloorPlan(); });
+            CafeStore.on('conflict', () => showToast('⚠️ Bàn vừa được thay đổi ở thiết bị khác, đã tải lại bản mới nhất.', 'warning'));
+            CafeStore.on('save-failed', (d) => showToast('❌ Không lưu được thay đổi: ' + (d.error || 'lỗi mạng'), 'warning'));
+            CafeStore.on('kds-new', (tickets) => {
+                playSuccessSound();
+                showToast('🔔 Món mới vừa bắn sang pha chế: ' + tickets.map(t => t.tableName).join(', '), 'info');
+            });
+            CafeStore.on('online', () => { refreshInvoices(); });
+            CafeStore.start({ kds: true }).then(() => { reloadTableOrders(); refreshInvoices(); });
 
             // Cập nhật thời gian thực mỗi phút
             setInterval(() => {

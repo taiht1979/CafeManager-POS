@@ -54,6 +54,9 @@ Dự án đã được cấu hình sẵn sàng:
    [`backend/schema.sql`](file:///c:/Users/PC/OneDrive/Nghiencuu/T%E1%BB%B1%20%C4%91%E1%BB%99ng%20h%C3%B3a/CafeManager%20POS/backend/schema.sql)
 3. Copy **toàn bộ nội dung** trong file `backend/schema.sql` (toàn bộ 395 dòng).
 4. Dán toàn bộ vào ô soạn thảo **SQL Editor** trên Neon.
+   > **Thứ tự chạy 3 file (mỗi file một lần Run):** `schema.sql` ➔ `migration_update_db.sql` ➔ `migration_002_realtime_orders.sql`.
+   > File thứ ba tạo bảng đơn đang mở, vé pha chế, bộ đếm mã hóa đơn và sửa lỗi sequence. Thiếu file này, đơn hàng sẽ không lưu được.
+   > Sau đó chạy `backend/seed_new_store.sql` (đã sửa thông tin) để tạo quán thật. Xem `CHAY-THU-QUAN-DAU-TIEN.md`.
 5. Nhấn nút **`Run`** (hoặc bấm tổ hợp phím `Ctrl + Enter`):
    - Neon sẽ khởi tạo toàn bộ các bảng: `Plans`, `Stores`, `StaffUsers`, `Tables`, `MenuItems`, `Orders`, `OrderDetails`, `Customers`.
    - Neon sẽ nạp sẵn dữ liệu hạt giống (Seeds): 3 gói dịch vụ, 2 quán mẫu (Aroma Roastery, Little Bean), danh sách bàn, món ăn mẫu và tài khoản quản trị.
@@ -90,6 +93,8 @@ Bạn có thể chọn 1 trong 2 cách sau:
      - **Value:** Dán chuỗi kết nối Neon bạn đã copy ở Bước 1:
        `postgresql://neondb_owner:...@ep-xyz.ap-southeast-1.aws.neon.tech/neondb?sslmode=require`
      - Bấm **`Add`**.
+     - Thêm biến thứ hai: **Key** `JWT_SECRET`, **Value** là chuỗi ngẫu nhiên dài (tạo bằng `openssl rand -hex 32`). **Bắt buộc**: thiếu biến này, API từ chối mọi đăng nhập.
+     - Bấm **`Add`** cho biến này.
 4. **Bấm `Deploy`:**
    - Nhấn nút **`Deploy`** màu xanh.
    - Chờ Vercel hoàn tất quá trình đóng gói trong khoảng 30-45 giây.
@@ -144,7 +149,9 @@ Sau khi deploy thành công, bạn có thể truy cập các đường dẫn sau
 | **`/super-admin`** | **Quản Trị Nền Tảng (Super Admin)** | Dành cho chủ ứng dụng SaaS quản lý các quán đăng ký và tạo gói dịch vụ (Plans). |
 | **`/api/health`** | **Kiểm Tra Kết Nối Neon DB** | Trả về JSON trạng thái: `{"status":"online", "neonDatabase":{"connected":true...}}`. |
 
-### 🔑 Danh Sách Tài Khoản, Mật Khẩu Chuẩn & Mã PIN Hệ Thống:
+### 🔑 Tài khoản DEMO (chỉ để thử, mật khẩu công khai trong repo, KHÔNG dùng cho quán thật):
+
+> Với quán thật hãy tạo tài khoản bằng `backend/seed_new_store.sql` và vô hiệu hóa các tài khoản dưới đây.
 
 | Vai Trò (Role) | Tên Đăng Nhập | Mật Khẩu Bảo Mật (Password) | Mã PIN 4 Số | Màn Hình Mặc Định |
 | :--- | :--- | :--- | :---: | :--- |

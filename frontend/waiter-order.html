@@ -53,6 +53,7 @@
             overscroll-behavior-y: contain;
         }
     </style>
+    <script src="js/cafe-store.js"></script>
     <script src="js/auth.js"></script>
 </head>
 <body class="h-[100dvh] font-sans antialiased bg-slate-950 text-slate-100 select-none flex flex-col justify-between overflow-hidden">
@@ -75,7 +76,7 @@
                     </div>
                     <div class="text-[10px] text-slate-400 flex items-center gap-1">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                        <span id="current-waiter-name">Hoàng Nhân (Order)</span>
+                        <span id="current-waiter-name"></span>
                     </div>
                 </div>
             </div>
@@ -84,7 +85,7 @@
             <div class="flex items-center gap-1.5">
                 <button onclick="openTableSelectSheet()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-black text-xs shadow-md shadow-amber-500/20 active:scale-95 transition-all">
                     <span>📍</span>
-                    <span id="current-table-label">Bàn 01</span>
+                    <span id="current-table-label">Chọn bàn</span>
                     <svg class="w-3.5 h-3.5 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                 </button>
                 <a href="login.html" title="Đổi tài khoản / Đăng xuất" class="p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-amber-400 border border-slate-700 active:scale-95 transition-transform text-xs font-bold flex items-center justify-center">
@@ -134,7 +135,7 @@
         <div class="mb-3 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between text-xs">
             <div class="flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
-                <span class="text-slate-400">Order cho: <strong class="text-amber-400 font-bold" id="banner-table-name">Bàn 01 (Tầng 1)</strong></span>
+                <span class="text-slate-400">Order cho: <strong class="text-amber-400 font-bold" id="banner-table-name">Chưa chọn bàn</strong></span>
             </div>
             <button onclick="openTableSelectSheet()" class="text-amber-400 font-bold text-[11px] underline">Đổi bàn</button>
         </div>
@@ -271,7 +272,7 @@
                 <div>
                     <h3 class="font-black text-white text-base flex items-center gap-2">
                         <span>📋 Đơn Hàng</span>
-                        <span class="text-amber-400" id="cart-sheet-table-name">Bàn 01</span>
+                        <span class="text-amber-400" id="cart-sheet-table-name"></span>
                     </h3>
                     <p class="text-[11px] text-slate-400">Kiểm tra các món trước khi gửi sang Pha Chế</p>
                 </div>
@@ -389,30 +390,14 @@
         // Synchronized Broadcast Channel with POS & Barista
         const syncChannel = new BroadcastChannel('pos_system_sync');
 
-        // Initial Sample Menu (Fallback if not in localStorage)
-        const defaultMenu = [
-            { id: 1, cat: 'coffee', name: 'Cà Phê Muối Kem Béo', price: 35000, emoji: '☕', desc: 'Cà phê Robusta đậm vị với kem mặn bí truyền' },
-            { id: 2, cat: 'coffee', name: 'Cà Phê Sữa Sài Gòn', price: 29000, emoji: '🥛', desc: 'Sữa đặc béo ngọt quyện cùng cà phê phin nguyên chất' },
-            { id: 3, cat: 'coffee', name: 'Bạc Xỉu 3 Tầng', price: 32000, emoji: '☕', desc: 'Thơm béo ngọt dịu, ít caffein dễ uống' },
-            { id: 4, cat: 'coffee', name: 'Americano Đá', price: 32000, emoji: '🧊', desc: 'Espresso thanh mát, đậm đà tỉnh táo sảng khoái' },
-            { id: 5, cat: 'tea', name: 'Trà Đào Cam Sả', price: 39000, emoji: '🍑', desc: 'Hương sả thanh khiết kết hợp đào giòn ngọt thơm' },
-            { id: 6, cat: 'tea', name: 'Trà Mãng Cầu Tươi', price: 42000, emoji: '🍈', desc: 'Mãng cầu tươi dầm ngọt thanh chua nhẹ giòn sần sật' },
-            { id: 7, cat: 'tea', name: 'Trà Oolong Kem Phô Mai', price: 45000, emoji: '🧀', desc: 'Vị trà Oolong thanh tao cùng lớp macchiato béo mịn' },
-            { id: 8, cat: 'tea', name: 'Trà Hoa Cúc Mật Ong', price: 35000, emoji: '🍯', desc: 'Thanh lọc cơ thể, ngọt nhẹ dịu dàng' },
-            { id: 9, cat: 'ice', name: 'Matcha Freeze Đá Xay', price: 49000, emoji: '🍵', desc: 'Matcha Uji Nhật Bản xay cùng sữa tươi và kem whipping' },
-            { id: 10, cat: 'ice', name: 'Caramel Macchiato Đá Xay', price: 52000, emoji: '🍧', desc: 'Cà phê caramel ngọt ngào phủ sốt thơm nức' },
-            { id: 11, cat: 'cake', name: 'Tiramisu Cacao Ý', price: 38000, emoji: '🍰', desc: 'Bánh mềm xốp thơm rượu vang nhẹ và mascarpone' },
-            { id: 12, cat: 'cake', name: 'Croissant Bơ Pháp', price: 28000, emoji: '🥐', desc: 'Nướng nóng giòn rụm từng lớp bơ thơm ngát' },
-            { id: 13, cat: 'topping', name: 'Trân Châu Trắng Thủy Tinh', price: 10000, emoji: '🧋', desc: 'Giòn sần sật' },
-            { id: 14, cat: 'topping', name: 'Kem Phô Mai Cheese', price: 12000, emoji: '🧀', desc: 'Béo ngậy thơm ngon' }
-        ];
+        // Menu, bàn, topping lấy từ server (CafeStore), không còn dữ liệu mẫu.
 
         // Global State
         let currentFilter = 'all';
-        let currentTableId = '1';
-        let currentTableName = 'Bàn 01';
-        let currentStaffName = 'Hoàng Nhân (Order)';
-        let tableOrders = JSON.parse(localStorage.getItem('pos_table_orders') || '{}');
+        let currentTableId = null;
+        let currentTableName = 'Chọn bàn';
+        let currentStaffName = '';
+        let tableOrders = CafeStore.readOpen();
         let cart = []; // Current table's cart
 
         // Item Customization State
@@ -432,6 +417,22 @@
             loadTableOrders();
             renderMenu();
             updateTableSelectionUI();
+
+            CafeStore.on('reference', () => {
+                renderMenu();
+                if (currentTableId === null) {
+                    const first = getActiveTables()[0];
+                    if (first) { currentTableId = String(first.id); currentTableName = first.name; updateTableSelectionUI(); loadTableOrders(); }
+                }
+            });
+            CafeStore.on('open-orders', () => {
+                loadTableOrders();
+                const sheet = document.getElementById('cart-sheet');
+                if (sheet && !sheet.classList.contains('hidden')) renderCartSheet();
+            });
+            CafeStore.on('conflict', () => showToast('⚠️ Bàn vừa được thay đổi ở thiết bị khác, đã tải lại đơn mới nhất.', 'warning'));
+            CafeStore.on('save-failed', (d) => showToast('❌ Không lưu được đơn: ' + (d.error || 'lỗi mạng'), 'warning'));
+            CafeStore.start({});
         });
 
         // Listen to cross-tab updates (from POS, Admin, Barista)
@@ -439,7 +440,7 @@
             const data = e.data;
             if (data.type === 'INVOICE_PAID' && data.tableId == currentTableId) {
                 cart = [];
-                tableOrders = JSON.parse(localStorage.getItem('pos_table_orders') || '{}');
+                tableOrders = CafeStore.readOpen();
                 renderCartSummary();
                 showToast(`Bàn ${currentTableName} vừa thanh toán tại Quầy POS!`, 'info');
             } else if (data.type === 'MENU_UPDATED' || data.type === 'TABLES_UPDATED' || data.type === 'TOPPINGS_UPDATED') {
@@ -453,16 +454,8 @@
 
         // Lấy danh sách Topping được cấu hình trong Store Admin
         function getStoreToppings() {
-            const stored = JSON.parse(localStorage.getItem('admin_store_toppings') || 'null');
-            if (stored && stored.length > 0) return stored;
-            return [
-                { id: 'top-1', name: 'Trân Châu Trắng Thủy Tinh', price: 10000 },
-                { id: 'top-2', name: 'Kem Phô Mai Cheese', price: 12000 },
-                { id: 'top-3', name: 'Thạch Đào Giòn', price: 10000 },
-                { id: 'top-4', name: 'Hạt Sen Bùi Béo', price: 12000 },
-                { id: 'top-5', name: 'Trân Châu Hoàng Kim', price: 10000 },
-                { id: 'top-6', name: 'Sương Sáo Thảo Mộc', price: 8000 }
-            ];
+            const stored = JSON.parse(localStorage.getItem('admin_store_toppings') || '[]');
+            return Array.isArray(stored) ? stored.filter(t => t.available !== false) : [];
         }
 
         function loadStaffName() {
@@ -484,8 +477,8 @@
         }
 
         function loadTableOrders() {
-            tableOrders = JSON.parse(localStorage.getItem('pos_table_orders') || '{}');
-            cart = tableOrders[currentTableId] ? [...tableOrders[currentTableId].cart] : [];
+            tableOrders = CafeStore.readOpen();
+            cart = (currentTableId !== null && tableOrders[currentTableId]) ? [...tableOrders[currentTableId].cart] : [];
             renderCartSummary();
         }
 
@@ -508,26 +501,13 @@
                     };
                 });
             }
-            return defaultMenu.map(m => ({
-                ...m,
-                allowTopping: (m.cat === 'tea' || m.cat === 'ice'),
-                allowedToppings: (m.cat === 'tea' || m.cat === 'ice') ? ['Trân Châu Trắng Thủy Tinh', 'Kem Phô Mai Cheese', 'Thạch Đào Giòn'] : []
-            }));
+            return [];
         }
 
         function getActiveTables() {
-            const adminTables = JSON.parse(localStorage.getItem('admin_store_tables') || 'null');
-            if (adminTables && adminTables.length > 0) {
-                return adminTables;
-            }
-            return [
-                { id: 1, name: 'Bàn 01', area: 'Tầng 1', capacity: 4, status: 'active' },
-                { id: 2, name: 'Bàn 02', area: 'Tầng 1', capacity: 4, status: 'active' },
-                { id: 3, name: 'Bàn 03', area: 'Sân Vườn', capacity: 6, status: 'active' },
-                { id: 4, name: 'Bàn VIP 01', area: 'Lầu 1', capacity: 8, status: 'active' },
-                { id: 5, name: 'Bàn 05', area: 'Sân Vườn', capacity: 4, status: 'active' },
-                { id: 0, name: 'Mang đi (Take-away)', area: 'Quầy bar', capacity: 1, status: 'active' }
-            ];
+            const adminTables = JSON.parse(localStorage.getItem('admin_store_tables') || '[]');
+            const list = (Array.isArray(adminTables) ? adminTables : []).filter(t => t.status !== 'maintenance');
+            return [...list, { id: 'takeaway', name: 'Mang đi (Take-away)', area: 'Quầy bar', capacity: 1, status: 'active' }];
         }
 
         // ==========================================
@@ -848,16 +828,23 @@
         }
 
         function saveCurrentCart() {
+            if (currentTableId === null) return;
             if (cart.length > 0) {
+                const prev = tableOrders[currentTableId] || {};
+                // Giữ nguyên các trường do POS đặt (trạng thái chờ thanh toán, giảm giá, khách...)
                 tableOrders[currentTableId] = {
+                    ...prev,
                     cart: cart,
-                    orderMode: currentTableId == '0' ? 'take-away' : 'dine-in',
+                    tableName: currentTableName,
+                    orderMode: currentTableId === 'takeaway' ? 'take-away' : 'dine-in',
+                    status: prev.status || 'occupied',
+                    openedAt: prev.openedAt || Date.now(),
                     savedAt: new Date().toLocaleTimeString('vi-VN')
                 };
             } else {
                 delete tableOrders[currentTableId];
             }
-            localStorage.setItem('pos_table_orders', JSON.stringify(tableOrders));
+            CafeStore.saveOpenOrders(tableOrders);
         }
 
         function renderCartSummary() {
@@ -918,41 +905,53 @@
         // ==========================================
         // SUBMIT ORDER TO BARISTA & POS (BẮN BẾP)
         // ==========================================
-        function submitOrderToBarista() {
+        let sendingKds = false;
+        async function submitOrderToBarista() {
+            if (sendingKds) return;
+            if (currentTableId === null) {
+                showToast('Hãy chọn bàn trước khi gửi!', 'warning');
+                return;
+            }
             if (cart.length === 0) {
                 showToast('Chưa có món nào để gửi sang Pha Chế!', 'warning');
                 return;
             }
+            // Chỉ gửi phần chưa gửi: mỗi món nhớ số lượng đã bắn (sentQty), tránh lên vé trùng
+            const newItems = cart
+                .map(i => ({ item: i, delta: i.quantity - (i.sentQty || 0) }))
+                .filter(x => x.delta > 0);
+            if (newItems.length === 0) {
+                showToast('Các món này đã được gửi sang pha chế rồi.', 'info');
+                return;
+            }
+            if (!CafeStore.isOnline()) {
+                showToast('⚠️ Mất kết nối máy chủ, chưa gửi được. Thử lại khi có mạng.', 'warning');
+                return;
+            }
 
-            playDingSuccess();
-            saveCurrentCart();
+            sendingKds = true;
+            try {
+                // Lưu đơn lên server trước để POS thấy đúng đơn, rồi mới lên vé
+                saveCurrentCart();
+                const r = await CafeStore.sendKds({
+                    tableKey: String(currentTableId),
+                    tableName: currentTableName,
+                    items: newItems.map(x => ({ name: x.item.name, size: x.item.size, quantity: x.delta, note: x.item.note }))
+                });
+                if (!r.ok) {
+                    showToast('❌ Không gửi được sang pha chế: ' + (r.json.error || 'lỗi mạng'), 'warning');
+                    return;
+                }
+                playDingSuccess();
+                newItems.forEach(x => { x.item.sentQty = x.item.quantity; });
+                saveCurrentCart();
 
-            // Append to barista queue in localStorage
-            let baristaOrders = JSON.parse(localStorage.getItem('barista_orders') || '[]');
-            const newBaristaTicket = {
-                id: 'TKT-' + Date.now().toString().slice(-4),
-                tableId: currentTableId,
-                tableName: currentTableName,
-                waiterName: currentStaffName,
-                time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-                items: JSON.parse(JSON.stringify(cart)),
-                status: 'pending', // pending -> brewing -> ready
-                timestamp: Date.now()
-            };
-            baristaOrders.push(newBaristaTicket);
-            localStorage.setItem('barista_orders', JSON.stringify(baristaOrders));
-
-            // Broadcast real-time event to Barista screen & Cashier POS
-            syncChannel.postMessage({
-                type: 'NEW_ORDER_FROM_WAITER',
-                ticket: newBaristaTicket,
-                tableId: currentTableId,
-                tableName: currentTableName,
-                waiter: currentStaffName
-            });
-
-            closeCartSheet();
-            showToast(`🚀 Đã bắn đơn ${currentTableName} sang quầy Pha Chế thành công!`, 'success');
+                syncChannel.postMessage({ type: 'NEW_ORDER_FROM_WAITER', tableId: currentTableId, tableName: currentTableName, waiter: currentStaffName });
+                closeCartSheet();
+                showToast(`🚀 Đã bắn ${newItems.length} món của ${currentTableName} sang quầy Pha Chế!`, 'success');
+            } finally {
+                sendingKds = false;
+            }
         }
 
         // ==========================================
@@ -971,15 +970,15 @@
         function renderTableSelectionSheet() {
             const grid = document.getElementById('sheet-tables-grid');
             const tables = getActiveTables();
-            tableOrders = JSON.parse(localStorage.getItem('pos_table_orders') || '{}');
+            tableOrders = CafeStore.readOpen();
 
             grid.innerHTML = tables.map(t => {
-                const isCurrent = t.id == currentTableId;
+                const isCurrent = String(t.id) === String(currentTableId);
                 const hasOrder = !!tableOrders[t.id] && tableOrders[t.id].cart.length > 0;
                 const itemCount = hasOrder ? tableOrders[t.id].cart.reduce((s, i) => s + i.quantity, 0) : 0;
 
                 return `
-                    <button onclick="switchTable('${t.id}', '${t.name}')" class="p-3 rounded-2xl border text-center transition-all active:scale-95 ${
+                    <button onclick="switchTable('${t.id}', '${t.name.replace(/'/g, "\\'")}')" class="p-3 rounded-2xl border text-center transition-all active:scale-95 ${
                         isCurrent 
                             ? 'border-amber-500 bg-amber-500/20 text-amber-300 ring-2 ring-amber-500' 
                             : hasOrder 
@@ -1012,7 +1011,7 @@
 
         function updateTableSelectionUI() {
             document.getElementById('current-table-label').textContent = currentTableName;
-            document.getElementById('banner-table-name').textContent = `${currentTableName} (${currentTableId == '0' ? 'Mang đi' : 'Tại bàn'})`;
+            document.getElementById('banner-table-name').textContent = currentTableId === null ? 'Chưa chọn bàn' : `${currentTableName} (${currentTableId === 'takeaway' ? 'Mang đi' : 'Tại bàn'})`;
         }
 
         // ==========================================

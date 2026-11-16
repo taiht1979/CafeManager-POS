@@ -63,6 +63,7 @@
             #kds-col-1, #kds-col-2, #kds-col-3 { display: flex !important; }
         }
     </style>
+    <script src="js/cafe-store.js"></script>
     <script src="js/auth.js"></script>
 </head>
 <body class="h-[100dvh] font-sans antialiased bg-slate-950 text-slate-100 flex flex-col overflow-hidden select-none kds-tab-1">
@@ -103,9 +104,6 @@
             </button>
 
             <!-- Test Order Generator -->
-            <button onclick="createMockTicket()" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-xs font-bold transition-all">
-                ➕ <span class="hidden sm:inline">Thử Đơn</span>
-            </button>
 
             <!-- Logout / Switch role -->
             <a href="login.html" title="Đổi tài khoản" class="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-amber-400 border border-slate-700 text-xs font-bold flex items-center justify-center">
@@ -262,26 +260,23 @@
         // Realtime Clock
         setInterval(() => {
             const now = new Date();
-            document.getElementById('kds-clock').textContent = now.toLocaleTimeString('vi-VN');
+            const clockEl = document.getElementById('kds-clock');
+            if (clockEl) clockEl.textContent = now.toLocaleTimeString('vi-VN');
             updateElapsedTimers();
         }, 1000);
 
         window.addEventListener('DOMContentLoaded', () => {
             loadBaristaName();
-            loadOrders();
             renderBoard();
-        });
 
-        // Listen to cross-system broadcasts (from Waiter mobile or Cashier POS)
-        syncChannel.onmessage = (e) => {
-            const data = e.data;
-            if (data.type === 'NEW_ORDER_FROM_WAITER' || data.type === 'ORDER_SENT_TO_KITCHEN') {
+            CafeStore.on('kds', () => { loadOrders(); renderBoard(); });
+            CafeStore.on('kds-new', (tickets) => {
                 playDingChime();
-                showKdsToast(`🔔 ĐƠN MỚI TỪ ${data.tableName || 'BÀN'}!`);
-                loadOrders();
-                renderBoard();
-            }
-        };
+                showKdsToast(`🔔 ĐƠN MỚI TỪ ${tickets.map(t => t.tableName).join(', ')}!`);
+            });
+            CafeStore.on('conflict', () => {});
+            CafeStore.start({ reference: false, open: false, kds: true }).then(() => { loadOrders(); renderBoard(); });
+        });
 
         function loadBaristaName() {
             if (window.CafeAuth) {
@@ -314,42 +309,7 @@
         }
 
         function loadOrders() {
-            orders = JSON.parse(localStorage.getItem('barista_orders') || 'null');
-            if (!orders || orders.length === 0) {
-                // Initial Sample orders if empty
-                orders = [
-                    {
-                        id: 'TKT-101',
-                        tableId: '1',
-                        tableName: 'Bàn 01 (Tầng 1)',
-                        waiterName: 'Hoàng Nhân (Order)',
-                        time: '19:40',
-                        status: 'pending',
-                        timestamp: Date.now() - 360000, // 6 mins ago
-                        items: [
-                            { name: 'Cà Phê Muối Kem Béo', size: 'M', quantity: 2, note: 'Size M • Đường 70% • Đá 100% • +Kem Cheese' },
-                            { name: 'Trà Đào Cam Sả', size: 'L', quantity: 1, note: 'Size L • Đường 50% • Đá 50% • +Thạch đào' }
-                        ]
-                    },
-                    {
-                        id: 'TKT-102',
-                        tableId: '3',
-                        tableName: 'Bàn 03 (Sân Vườn)',
-                        waiterName: 'Hoàng Nhân (Order)',
-                        time: '19:44',
-                        status: 'brewing',
-                        timestamp: Date.now() - 120000, // 2 mins ago
-                        items: [
-                            { name: 'Matcha Freeze Đá Xay', size: 'M', quantity: 1, note: 'Size M • Đường 100% • Nhiều kem whipping' }
-                        ]
-                    }
-                ];
-                saveOrders();
-            }
-        }
-
-        function saveOrders() {
-            localStorage.setItem('barista_orders', JSON.stringify(orders));
+            orders = CafeStore.kdsList();
         }
 
         function getElapsedText(timestamp) {
@@ -474,52 +434,35 @@
             `;
         }
 
-        function updateTicketStatus(ticketId, newStatus) {
+        async function updateTicketStatus(ticketId, newStatus) {
             playDingChime();
             const order = orders.find(o => o.id === ticketId);
             if (!order) return;
+            const tableName = order.tableName;
 
-            order.status = newStatus;
-            saveOrders();
+            const p = CafeStore.setKdsStatus(ticketId, newStatus);
+            loadOrders();
             renderBoard();
+            const r = await p;
+            if (!r.ok) {
+                showKdsToast('❌ Không cập nhật được vé: ' + (r.json.error || 'mất kết nối'));
+                loadOrders();
+                renderBoard();
+                return;
+            }
 
             if (newStatus === 'ready') {
-                showKdsToast(`✓ Đã pha xong đơn của ${order.tableName}! Báo phục vụ bưng ra.`);
-                // Broadcast to Waiter & POS that order is ready
-                syncChannel.postMessage({
-                    type: 'ORDER_READY',
-                    ticketId: ticketId,
-                    tableName: order.tableName
-                });
+                showKdsToast(`✓ Đã pha xong đơn của ${tableName}! Báo phục vụ bưng ra.`);
+                syncChannel.postMessage({ type: 'ORDER_READY', ticketId: ticketId, tableName: tableName });
             }
         }
 
-        function archiveTicket(ticketId) {
-            orders = orders.filter(o => o.id !== ticketId);
-            saveOrders();
+        async function archiveTicket(ticketId) {
+            const p = CafeStore.setKdsStatus(ticketId, 'served');
+            loadOrders();
             renderBoard();
-            showKdsToast('✓ Đã hoàn tất và lưu trữ đơn!');
-        }
-
-        function createMockTicket() {
-            playDingChime();
-            const mock = {
-                id: 'TKT-' + Math.floor(100 + Math.random() * 900),
-                tableId: '2',
-                tableName: 'Bàn 02 (Tầng 1)',
-                waiterName: 'Hoàng Nhân (Order)',
-                time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-                status: 'pending',
-                timestamp: Date.now(),
-                items: [
-                    { name: 'Bạc Xỉu 3 Tầng', size: 'M', quantity: 1, note: 'Size M • Đường 50% • Đá 100%' },
-                    { name: 'Trà Oolong Kem Phô Mai', size: 'L', quantity: 2, note: 'Size L • Đường 70% • Nhiều Cheese' }
-                ]
-            };
-            orders.unshift(mock);
-            saveOrders();
-            renderBoard();
-            showKdsToast('Đã thêm 1 đơn thử nghiệm vào danh sách chờ!');
+            const r = await p;
+            showKdsToast(r.ok ? '✓ Đã hoàn tất và lưu trữ đơn!' : '❌ Chưa lưu được trạng thái, kiểm tra mạng.');
         }
 
         function showKdsToast(msg) {

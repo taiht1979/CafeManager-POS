@@ -18,9 +18,10 @@ const connectionString = process.env.DATABASE_URL ||
 let pool = null;
 
 if (connectionString) {
+    const isLocal = /@(localhost|127\.0\.0\.1)([:/]|$)/.test(connectionString) || /sslmode=disable/.test(connectionString);
     pool = new Pool({
         connectionString: connectionString,
-        ssl: {
+        ssl: isLocal ? false : {
             rejectUnauthorized: false
         },
         max: 10, // Giới hạn pool kết nối cho serverless
@@ -48,6 +49,27 @@ async function query(text, params) {
     } catch (err) {
         console.error('❌ [Neon Query Error]:', err.message, '| SQL:', text);
         throw err;
+    }
+}
+
+/**
+ * Chạy nhiều câu lệnh trong một transaction. fn nhận client có hàm query(text, params).
+ */
+async function withTransaction(fn) {
+    if (!pool) {
+        throw new Error('DATABASE_URL chưa được cấu hình. Vui lòng thêm biến môi trường trên Vercel hoặc file .env!');
+    }
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        const result = await fn(client);
+        await client.query('COMMIT');
+        return result;
+    } catch (err) {
+        try { await client.query('ROLLBACK'); } catch (e) {}
+        throw err;
+    } finally {
+        client.release();
     }
 }
 
@@ -80,6 +102,7 @@ async function testConnection() {
 
 module.exports = {
     query,
+    withTransaction,
     testConnection,
     isConfigured: () => !!connectionString,
     getPool: () => pool
