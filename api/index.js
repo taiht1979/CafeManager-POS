@@ -274,9 +274,17 @@ app.get('/api/tables', async (req, res) => {
     res.json({ success: true, data: filtered, source: 'Mock Data' });
 });
 
+// Frontend gửi 'active' | 'maintenance' | 'available'..., DB chỉ chấp nhận giá trị viết hoa đầu (CHECK constraint)
+const TABLE_STATUS_MAP = {
+    active: 'Available', available: 'Available', occupied: 'Occupied', billing: 'Billing',
+    reserved: 'Reserved', merged: 'Merged', maintenance: 'Maintenance'
+};
+
 app.post('/api/tables', async (req, res) => {
-    const { id, storeId = 1, name, area = 'Tầng 1', capacity = 4, status = 'active' } = req.body;
+    const { id, storeId = 1, name, area = 'Tầng 1', capacity = 4 } = req.body;
+    const status = TABLE_STATUS_MAP[String(req.body.status || 'active').toLowerCase()];
     if (!name) return res.status(400).json({ error: 'Tên bàn là bắt buộc!' });
+    if (!status) return res.status(400).json({ error: 'Trạng thái bàn không hợp lệ!' });
 
     if (db.isConfigured()) {
         try {
@@ -350,7 +358,7 @@ app.get('/api/menu', async (req, res) => {
             console.warn('Lỗi truy vấn Neon:', e.message);
         }
     }
-    res.json({ success: true, data: mockMenu, source: 'Mock Data' });
+    res.json({ success: true, data: mockMenu.filter(m => m.StoreID === storeId), source: 'Mock Data' });
 });
 
 app.post('/api/menu', async (req, res) => {
@@ -460,7 +468,7 @@ app.get('/api/staff', async (req, res) => {
             console.warn('Lỗi truy vấn Neon:', e.message);
         }
     }
-    res.json({ success: true, data: mockStaff, source: 'Mock Data' });
+    res.json({ success: true, data: mockStaff.filter(s => s.StoreID === storeId), source: 'Mock Data' });
 });
 
 app.post('/api/staff', async (req, res) => {
@@ -574,7 +582,7 @@ app.get('/api/orders', async (req, res) => {
             console.warn('Lỗi truy vấn Neon:', e.message);
         }
     }
-    res.json({ success: true, data: mockOrders, source: 'Mock Data' });
+    res.json({ success: true, data: mockOrders.filter(o => o.StoreID === storeId), source: 'Mock Data' });
 });
 
 app.post('/api/orders/void', async (req, res) => {
@@ -612,6 +620,12 @@ app.post('/api/barista/queue', (req, res) => {
     const ticket = req.body;
     mockBaristaQueue.push(ticket);
     res.json({ success: true, message: 'Đã bắn vé sang hàng đợi Barista' });
+});
+
+// Xử lý lỗi chung: trả JSON thay vì HTML stack trace (vd: body JSON sai cú pháp)
+app.use((err, req, res, next) => {
+    const status = err.status || err.statusCode || 500;
+    res.status(status).json({ success: false, error: status === 400 ? 'Dữ liệu gửi lên không hợp lệ (JSON sai cú pháp)!' : 'Lỗi máy chủ nội bộ' });
 });
 
 // =============================================================================

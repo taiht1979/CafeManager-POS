@@ -78,3 +78,12 @@ ALTER TABLE StaffUsers DISABLE ROW LEVEL SECURITY;
 ALTER TABLE Toppings DISABLE ROW LEVEL SECURITY;
 
 SELECT '✓ NÂNG CẤP CƠ SỞ DỮ LIỆU THÀNH CÔNG!' AS KetQua;
+
+-- Đồng bộ lại SEQUENCE sau khi seed dữ liệu với ID cố định (nếu không, INSERT mới sẽ trùng khóa chính)
+SELECT setval(pg_get_serial_sequence('Plans', 'planid'), COALESCE((SELECT MAX(PlanID) FROM Plans), 1));
+SELECT setval(pg_get_serial_sequence('Stores', 'storeid'), COALESCE((SELECT MAX(StoreID) FROM Stores), 1));
+SELECT setval(pg_get_serial_sequence('StaffUsers', 'userid'), COALESCE((SELECT MAX(UserID) FROM StaffUsers), 1));
+SELECT setval(pg_get_serial_sequence('Tables', 'tableid'), COALESCE((SELECT MAX(TableID) FROM Tables), 1));
+SELECT setval(pg_get_serial_sequence('MenuItems', 'itemid'), COALESCE((SELECT MAX(ItemID) FROM MenuItems), 1));
+SELECT setval(pg_get_serial_sequence('Toppings', 'toppingid'), COALESCE((SELECT MAX(ToppingID) FROM Toppings), 1));
+SELECT setval(pg_get_serial_sequence('Customers', 'customerid'), COALESCE((SELECT MAX(CustomerID) FROM Customers), 1));

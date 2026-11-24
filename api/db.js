@@ -15,14 +15,29 @@ const connectionString = process.env.DATABASE_URL ||
                          process.env.POSTGRES_PRISMA_URL || 
                          process.env.POSTGRES_URL_NON_POOLING || '';
 
+// Postgres trả tên cột dạng chữ thường (itemname, baseprice...) nhưng frontend dùng PascalCase
+// (ItemName, BasePrice...). Khôi phục lại đúng kiểu chữ theo schema.sql để API nhất quán với chế độ Mock.
+const COLUMN_NAMES = 'Address,AllowsSizeChange,AllowsSugarIce,AllowsTopping,AnnualPrice,AreaName,AvailableToppings,BankAccountName,BankAccountNumber,BankCode,BaristaStatus,BasePrice,Birthday,Capacity,CashierNote,CashierUserID,CategoryName,ClosedAt,CostPrice,CreatedAt,CustomerID,CustomerNote,Description,DiscountAmount,Email,ExpiryDate,Feature_CRM,Feature_Inventory,Feature_KDS,Feature_MultiBranch,Feature_QR_Order,FullName,IceLevel,ImageUrl,IsActive,IsAvailable,IsSplitBill,IsVirtualSplit,ItemID,ItemName,ItemNameSnapshot,LastLoginAt,LastVisitAt,LoyaltyPoints,MaxStaff,MaxTables,MembershipTier,MergeGroupCode,MergedIntoTableID,MonthlyPrice,OrderCode,OrderDetailID,OrderID,OrderStatus,OrderType,ParentOrderID,ParentSplitTableID,Password,PasswordHash,PaymentMethod,PaymentStatus,Phone,Pin,PlanCode,PlanID,PlanName,PointsEarned,Price,QRToken,Quantity,Role,SKU,Size,Status,StoreCode,StoreID,StoreName,Subdomain,SubscriptionStatus,Subtotal,SugarLevel,TableID,TableName,TaxAmount,ToppingID,ToppingName,ToppingTotalPrice,ToppingsJSON,TotalAmount,TotalLineAmount,TotalSpent,UnitPrice,UpdatedAt,UserID,Username'.split(',');
+const COLUMN_CASE = Object.fromEntries(COLUMN_NAMES.map(c => [c.toLowerCase(), c]));
+
+function restoreRowCase(row) {
+    const out = {};
+    for (const key of Object.keys(row)) out[COLUMN_CASE[key] || key] = row[key];
+    return out;
+}
+
+// NUMERIC mặc định trả về string -> chuyển sang number (giá tiền, tổng bill)
+require('pg').types.setTypeParser(1700, v => (v === null ? null : parseFloat(v)));
+
 let pool = null;
 
 if (connectionString) {
     pool = new Pool({
         connectionString: connectionString,
-        ssl: {
-            rejectUnauthorized: false
-        },
+        // Chỉ bật SSL khi kết nối tới host từ xa (Neon). Postgres local không hỗ trợ SSL.
+        ssl: /@(localhost|127\.0\.0\.1)([:/]|$)/.test(connectionString) || /sslmode=disable/.test(connectionString)
+            ? false
+            : { rejectUnauthorized: false },
         max: 10, // Giới hạn pool kết nối cho serverless
         idleTimeoutMillis: 30000,
         connectionTimeoutMillis: 5000,
@@ -40,10 +55,9 @@ async function query(text, params) {
     if (!pool) {
         throw new Error('DATABASE_URL chưa được cấu hình. Vui lòng thêm biến môi trường trên Vercel hoặc file .env!');
     }
-    const start = Date.now();
     try {
         const res = await pool.query(text, params);
-        const duration = Date.now() - start;
+        if (Array.isArray(res.rows)) res.rows = res.rows.map(restoreRowCase);
         return res;
     } catch (err) {
         console.error('❌ [Neon Query Error]:', err.message, '| SQL:', text);
