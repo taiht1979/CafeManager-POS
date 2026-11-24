@@ -12,6 +12,27 @@
     const STORAGE_KEY_TOKEN = 'cafemanager_auth_token';
     const STORAGE_KEY_REMEMBER = 'cafemanager_remember_auth';
 
+    // Tự động gửi JWT (Authorization: Bearer) cho mọi lời gọi /api/* (trừ đăng nhập)
+    if (typeof global.fetch === 'function' && !global.__CAFE_FETCH_PATCHED__) {
+        global.__CAFE_FETCH_PATCHED__ = true;
+        const rawFetch = global.fetch.bind(global);
+        global.fetch = function (input, init) {
+            try {
+                const url = typeof input === 'string' ? input : (input && input.url) || '';
+                if (url.startsWith('/api/') && !url.startsWith('/api/auth/')) {
+                    const token = localStorage.getItem(STORAGE_KEY_TOKEN);
+                    if (token) {
+                        init = Object.assign({}, init);
+                        const headers = new Headers(init.headers || (typeof input !== 'string' && input.headers) || {});
+                        if (!headers.has('Authorization')) headers.set('Authorization', 'Bearer ' + token);
+                        init.headers = headers;
+                    }
+                }
+            } catch (e) { /* không chặn request nếu lỗi đọc token */ }
+            return rawFetch(input, init);
+        };
+    }
+
     // Danh sách tài khoản người dùng mẫu chuẩn hệ thống với mật khẩu & PIN bảo mật cao
     const DEFAULT_USERS = [
         {

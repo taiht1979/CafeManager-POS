@@ -87,3 +87,7 @@ SELECT setval(pg_get_serial_sequence('Tables', 'tableid'), COALESCE((SELECT MAX(
 SELECT setval(pg_get_serial_sequence('MenuItems', 'itemid'), COALESCE((SELECT MAX(ItemID) FROM MenuItems), 1));
 SELECT setval(pg_get_serial_sequence('Toppings', 'toppingid'), COALESCE((SELECT MAX(ToppingID) FROM Toppings), 1));
 SELECT setval(pg_get_serial_sequence('Customers', 'customerid'), COALESCE((SELECT MAX(CustomerID) FROM Customers), 1));
+
+-- Cột phục vụ API hủy hóa đơn (/api/orders/void)
+ALTER TABLE Orders ADD COLUMN IF NOT EXISTS CancelReason TEXT;
+ALTER TABLE Orders ADD COLUMN IF NOT EXISTS CancelledBy VARCHAR(100);

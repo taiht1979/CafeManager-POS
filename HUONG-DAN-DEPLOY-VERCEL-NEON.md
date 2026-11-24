@@ -180,3 +180,11 @@ Sau khi deploy thành công, bạn có thể truy cập các đường dẫn sau
 ---
 
 > 🎉 **Chúc mừng bạn!** Hệ thống CafeManager POS hiện đã sẵn sàng 100% trên nền tảng đám mây Vercel và Neon PostgreSQL để đưa vào ứng dụng thực tiễn!
+
+
+## Biến môi trường bảo mật (bắt buộc)
+
+- `JWT_SECRET`: chuỗi ngẫu nhiên dài, dùng ký token đăng nhập. Thiếu biến này API trên Vercel sẽ từ chối đăng nhập. Tạo nhanh: `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`.
+- `ALLOWED_ORIGINS` (tùy chọn): danh sách origin được gọi API từ trình duyệt, phân tách bằng dấu phẩy.
+- Sau khi nâng cấp, chạy lại `backend/migration_update_db.sql` trên Neon (thêm cột hủy hóa đơn và đồng bộ sequence). Mật khẩu cũ dạng plaintext sẽ tự được băm khi nhân viên đăng nhập lần kế tiếp.
+- Chạy kiểm thử: `npm test`.

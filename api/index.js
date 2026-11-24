@@ -1,16 +1,25 @@
 /**
  * CafeManager POS - Vercel Serverless Backend API
  * Kết nối CSDL Neon Serverless PostgreSQL
+ *
+ * Bảo mật: mọi endpoint dữ liệu quán yêu cầu JWT (xem api/auth.js). StoreID lấy từ token.
  */
 
 const express = require('express');
 const cors = require('cors');
 const db = require('./db');
+const auth = require('./auth');
 
 const app = express();
+app.set('trust proxy', 1);
 
-app.use(cors());
-app.use(express.json());
+// CORS: production chỉ cho các origin khai báo trong ALLOWED_ORIGINS (frontend cùng domain không cần CORS)
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
+const isProd = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
+app.use(cors({
+    origin: (origin, cb) => cb(null, !origin || allowedOrigins.includes(origin) || (!isProd && allowedOrigins.length === 0))
+}));
+app.use(express.json({ limit: '1mb' }));
 
 // =============================================================================
 // MOCK DATA DỰ PHÒNG (FALLBACK KHI CHƯA NHẬP DATABASE_URL)
@@ -62,173 +71,145 @@ function getDefaultScreenForRole(role) {
 let mockOrders = [];
 let mockBaristaQueue = [];
 
+
+const { requireAuth, MANAGER_ROLES, STORE_ROLES } = auth;
+const ALL_STAFF_ROLES = ['StoreOwner', 'StoreManager', 'Manager', 'Cashier', 'Waiter', 'Barista'];
+const STAFF_ROLE_ALIASES = { order: 'Waiter' };
+const ROLE_NAMES = {
+    SuperAdmin: 'Super Admin SaaS', StoreOwner: 'Quản Lý / Chủ Quán', StoreManager: 'Quản Lý / Chủ Quán',
+    Manager: 'Quản Lý / Chủ Quán', Cashier: 'Thu Ngân POS', Waiter: 'Nhân Viên Order', Barista: 'Quầy Pha Chế'
+};
+
+// Mật khẩu mock được băm 1 lần khi khởi động (chỉ dùng khi chưa cấu hình DATABASE_URL)
+mockStaff.forEach(s => { s.Password = auth.hashPassword(s.Password); });
+
 // =============================================================================
-// API ROUTES
+// AUTH
 // =============================================================================
 
-// 0. Xác thực & Đăng nhập (Authentication)
-app.post('/api/auth/login', async (req, res) => {
-    const { username, password, pin } = req.body;
+// Trả về { user } | { error, status }. Khi đã cấu hình DB thì CHỈ dùng DB (không fallback sang tài khoản mock).
+async function findUser({ username, pin }) {
     const loginUser = (username || '').toLowerCase().trim();
-    const cleanPin = pin ? String(pin).trim() : null;
-
-    let user = null;
-
     if (db.isConfigured()) {
         try {
-            if (cleanPin) {
-                const result = await db.query('SELECT * FROM StaffUsers WHERE Pin = $1 AND IsActive = TRUE LIMIT 1', [cleanPin]);
-                if (result.rows.length > 0) user = result.rows[0];
-            } else if (loginUser) {
-                const result = await db.query('SELECT * FROM StaffUsers WHERE (LOWER(Username) = $1 OR Phone = $1) AND IsActive = TRUE LIMIT 1', [loginUser]);
-                if (result.rows.length > 0) user = result.rows[0];
-            }
+            let r;
+            if (pin) r = await db.query('SELECT * FROM StaffUsers WHERE Pin = $1 AND IsActive = TRUE LIMIT 1', [pin]);
+            else r = await db.query('SELECT * FROM StaffUsers WHERE (LOWER(Username) = $1 OR Phone = $1) AND IsActive = TRUE LIMIT 1', [loginUser]);
+            return { user: r.rows[0] || null };
         } catch (e) {
-            console.warn('Lỗi kiểm tra StaffUsers trên Neon DB:', e.message);
+            console.error('Lỗi đọc StaffUsers:', e.message);
+            return { error: 'Không kết nối được cơ sở dữ liệu, vui lòng thử lại!', status: 503 };
         }
+    }
+    const user = pin
+        ? mockStaff.find(s => s.Pin === pin && s.IsActive !== false)
+        : mockStaff.find(s => (s.Username.toLowerCase() === loginUser || s.Phone === loginUser) && s.IsActive !== false);
+    return { user: user || null };
+}
+
+async function getStoreName(storeId) {
+    if (db.isConfigured() && storeId) {
+        try {
+            const r = await db.query('SELECT StoreName FROM Stores WHERE StoreID = $1', [storeId]);
+            if (r.rows[0]) return r.rows[0].StoreName;
+        } catch (e) { /* bỏ qua */ }
+    }
+    const st = mockStores.find(s => s.StoreID === storeId);
+    return st ? st.StoreName : '';
+}
+
+async function issueSession(user, message) {
+    let token;
+    try { token = auth.signToken(user); }
+    catch (e) { return { status: 500, body: { success: false, error: e.message } }; }
+    return {
+        status: 200,
+        body: {
+            success: true,
+            message: `${message} ${user.FullName}`,
+            token,
+            user: {
+                id: user.UserID,
+                username: user.Username,
+                fullName: user.FullName,
+                role: user.Role,
+                roleName: ROLE_NAMES[user.Role] || user.Role,
+                storeId: user.StoreID,
+                storeName: await getStoreName(user.StoreID),
+                defaultScreen: getDefaultScreenForRole(user.Role)
+            }
+        }
+    };
+}
+
+app.post('/api/auth/login', auth.loginRateLimit, async (req, res) => {
+    const { username, password, pin } = req.body || {};
+    const loginUser = (username || '').toString().toLowerCase().trim();
+    const cleanPin = pin ? String(pin).trim() : null;
+
+    if (!cleanPin && !loginUser) {
+        return res.status(400).json({ success: false, error: 'Vui lòng nhập tên đăng nhập hoặc mã PIN!' });
     }
 
-    if (!user) {
-        if (cleanPin) {
-            user = mockStaff.find(s => s.Pin === cleanPin && s.IsActive !== false);
-        } else if (loginUser) {
-            user = mockStaff.find(s => 
-                (s.Username.toLowerCase() === loginUser || s.Phone === loginUser) && 
-                s.IsActive !== false
-            );
-        }
-    }
+    const found = await findUser({ username: loginUser, pin: cleanPin });
+    if (found.error) return res.status(found.status).json({ success: false, error: found.error });
+    const user = found.user;
 
     if (cleanPin) {
         if (!user) {
-            return res.status(401).json({ 
-                success: false, 
-                error: 'Mã PIN không chính xác! Vui lòng kiểm tra lại.' 
-            });
-        }
-    } else if (loginUser) {
-        if (!user) {
-            return res.status(401).json({ 
-                success: false, 
-                error: 'Tài khoản không tồn tại trong hệ thống!' 
-            });
-        }
-
-        // KIỂM TRA MẬT KHẨU CHẶT CHẼ
-        const validPass = user.Password || user.PasswordHash || user.Pin;
-        if (!password || (password !== user.Password && password !== validPass && password !== user.Pin)) {
-            return res.status(401).json({ 
-                success: false, 
-                error: 'Mật khẩu không chính xác! Vui lòng kiểm tra lại.' 
-            });
+            auth.recordLoginFailure(req.loginKey);
+            return res.status(401).json({ success: false, error: 'Mã PIN không chính xác! Vui lòng kiểm tra lại.' });
         }
     } else {
-        return res.status(400).json({ 
-            success: false, 
-            error: 'Vui lòng nhập tên đăng nhập hoặc mã PIN!' 
-        });
+        if (!user) {
+            auth.recordLoginFailure(req.loginKey);
+            return res.status(401).json({ success: false, error: 'Tài khoản không tồn tại trong hệ thống!' });
+        }
+        // Chỉ chấp nhận đúng mật khẩu (không còn chấp nhận PIN thay mật khẩu)
+        if (!auth.verifyPassword(password, user.Password)) {
+            auth.recordLoginFailure(req.loginKey);
+            return res.status(401).json({ success: false, error: 'Mật khẩu không chính xác! Vui lòng kiểm tra lại.' });
+        }
+        // Tự động băm lại mật khẩu plaintext cũ
+        if (db.isConfigured() && !auth.isHashed(user.Password)) {
+            db.query('UPDATE StaffUsers SET Password = $1 WHERE UserID = $2', [auth.hashPassword(password), user.UserID]).catch(() => {});
+        }
     }
 
-    const defaultScreen = getDefaultScreenForRole(user.Role);
-    const store = mockStores.find(st => st.StoreID === (user.StoreID || 1)) || mockStores[0];
-
-    const token = Buffer.from(JSON.stringify({
-        userId: user.UserID,
-        username: user.Username,
-        role: user.Role,
-        storeId: user.StoreID,
-        exp: Date.now() + 86400000
-    })).toString('base64');
-
-    return res.json({
-        success: true,
-        message: `Đăng nhập thành công! Chào mừng ${user.FullName}`,
-        token,
-        user: {
-            id: user.UserID,
-            username: user.Username,
-            fullName: user.FullName,
-            role: user.Role,
-            roleName: user.Role === 'SuperAdmin' ? 'Super Admin SaaS' :
-                      user.Role === 'StoreOwner' || user.Role === 'Manager' ? 'Quản Lý / Chủ Quán' :
-                      user.Role === 'Cashier' ? 'Thu Ngân POS' :
-                      user.Role === 'Waiter' ? 'Nhân Viên Order' : 'Quầy Pha Chế',
-            storeId: user.StoreID,
-            storeName: store ? store.StoreName : 'Aroma Coffee Roastery',
-            defaultScreen
-        }
-    });
+    auth.clearLoginFailures(req.loginKey);
+    const out = await issueSession(user, 'Đăng nhập thành công! Chào mừng');
+    res.status(out.status).json(out.body);
 });
 
-app.post('/api/auth/pin', async (req, res) => {
-    const { pin } = req.body;
-    const cleanPin = String(pin || '').trim();
-
-    if (!cleanPin || cleanPin.length !== 4) {
+app.post('/api/auth/pin', auth.loginRateLimit, async (req, res) => {
+    const cleanPin = String((req.body || {}).pin || '').trim();
+    if (!/^\d{4}$/.test(cleanPin)) {
         return res.status(400).json({ success: false, error: 'Mã PIN phải gồm đúng 4 chữ số!' });
     }
-
-    let user = null;
-    if (db.isConfigured()) {
-        try {
-            const result = await db.query('SELECT * FROM StaffUsers WHERE Pin = $1 AND IsActive = TRUE LIMIT 1', [cleanPin]);
-            if (result.rows.length > 0) user = result.rows[0];
-        } catch (e) {
-            console.warn('Lỗi kiểm tra mã PIN trên Neon DB:', e.message);
-        }
+    const found = await findUser({ pin: cleanPin });
+    if (found.error) return res.status(found.status).json({ success: false, error: found.error });
+    if (!found.user) {
+        auth.recordLoginFailure(req.loginKey);
+        return res.status(401).json({ success: false, error: 'Mã PIN không chính xác!' });
     }
-
-    if (!user) {
-        user = mockStaff.find(s => s.Pin === cleanPin && s.IsActive !== false);
-    }
-
-    if (!user) {
-        return res.status(401).json({
-            success: false,
-            error: `Mã PIN ${cleanPin} không chính xác!`
-        });
-    }
-
-    const defaultScreen = getDefaultScreenForRole(user.Role);
-    const store = mockStores.find(st => st.StoreID === (user.StoreID || 1)) || mockStores[0];
-
-    const token = Buffer.from(JSON.stringify({
-        userId: user.UserID,
-        username: user.Username,
-        role: user.Role,
-        storeId: user.StoreID,
-        exp: Date.now() + 86400000
-    })).toString('base64');
-
-    return res.json({
-        success: true,
-        message: `Xác thực PIN thành công! Chào mừng ${user.FullName}`,
-        token,
-        user: {
-            id: user.UserID,
-            username: user.Username,
-            fullName: user.FullName,
-            role: user.Role,
-            storeId: user.StoreID,
-            storeName: store ? store.StoreName : 'Aroma Coffee Roastery',
-            defaultScreen
-        }
-    });
+    auth.clearLoginFailures(req.loginKey);
+    const out = await issueSession(found.user, 'Xác thực PIN thành công! Chào mừng');
+    res.status(out.status).json(out.body);
 });
 
-// 1. Kiểm tra trạng thái hệ thống & Neon DB
+// =============================================================================
+// PUBLIC: health & plans
+// =============================================================================
 app.get('/api/health', async (req, res) => {
     const dbStatus = await db.testConnection();
     res.json({
         status: 'online',
         service: 'CafeManager POS - Vercel Serverless API',
-        environment: process.env.NODE_ENV || 'production',
-        neonDatabase: dbStatus,
+        neonDatabase: { connected: !!dbStatus.connected },
         mode: db.isConfigured() ? 'NEON_POSTGRESQL_REALTIME' : 'MOCK_IN_MEMORY'
     });
 });
 
-// 2. Gói dịch vụ SaaS (Plans)
 app.get('/api/plans', async (req, res) => {
     if (db.isConfigured()) {
         try {
@@ -241,8 +222,8 @@ app.get('/api/plans', async (req, res) => {
     res.json({ success: true, data: mockPlans, source: 'Mock Data' });
 });
 
-// 3. Danh sách Quán / Chi nhánh (Stores)
-app.get('/api/stores', async (req, res) => {
+// Danh sách toàn bộ quán: chỉ SuperAdmin
+app.get('/api/stores', auth.requireSuperAdmin, async (req, res) => {
     if (db.isConfigured()) {
         try {
             const result = await db.query(`
@@ -259,9 +240,16 @@ app.get('/api/stores', async (req, res) => {
     res.json({ success: true, data: mockStores, source: 'Mock Data' });
 });
 
-// 4. Quản lý Bàn (Tables)
-app.get('/api/tables', async (req, res) => {
-    const storeId = parseInt(req.query.store_id || 1, 10);
+// =============================================================================
+// TABLES (đọc: mọi vai trò của quán; ghi: quản lý)
+// =============================================================================
+const TABLE_STATUS_MAP = {
+    active: 'Available', available: 'Available', occupied: 'Occupied', billing: 'Billing',
+    reserved: 'Reserved', merged: 'Merged', maintenance: 'Maintenance'
+};
+
+app.get('/api/tables', requireAuth(...STORE_ROLES), async (req, res) => {
+    const storeId = req.storeId;
     if (db.isConfigured()) {
         try {
             const result = await db.query('SELECT * FROM Tables WHERE StoreID = $1 ORDER BY TableID ASC', [storeId]);
@@ -270,86 +258,68 @@ app.get('/api/tables', async (req, res) => {
             console.warn('Lỗi truy vấn Neon:', e.message);
         }
     }
-    const filtered = mockTables.filter(t => t.StoreID === storeId);
-    res.json({ success: true, data: filtered, source: 'Mock Data' });
+    res.json({ success: true, data: mockTables.filter(t => t.StoreID === storeId), source: 'Mock Data' });
 });
 
-// Frontend gửi 'active' | 'maintenance' | 'available'..., DB chỉ chấp nhận giá trị viết hoa đầu (CHECK constraint)
-const TABLE_STATUS_MAP = {
-    active: 'Available', available: 'Available', occupied: 'Occupied', billing: 'Billing',
-    reserved: 'Reserved', merged: 'Merged', maintenance: 'Maintenance'
-};
-
-app.post('/api/tables', async (req, res) => {
-    const { id, storeId = 1, name, area = 'Tầng 1', capacity = 4 } = req.body;
-    const status = TABLE_STATUS_MAP[String(req.body.status || 'active').toLowerCase()];
+app.post('/api/tables', requireAuth(...MANAGER_ROLES), async (req, res) => {
+    const { id, name, area = 'Tầng 1', capacity = 4 } = req.body || {};
+    const storeId = req.storeId;
+    const status = TABLE_STATUS_MAP[String((req.body || {}).status || 'active').toLowerCase()];
     if (!name) return res.status(400).json({ error: 'Tên bàn là bắt buộc!' });
     if (!status) return res.status(400).json({ error: 'Trạng thái bàn không hợp lệ!' });
 
     if (db.isConfigured()) {
         try {
             if (id) {
-                // Update
                 const updateRes = await db.query(`
                     UPDATE Tables 
                     SET TableName = $1, AreaName = $2, Capacity = $3, Status = $4, UpdatedAt = CURRENT_TIMESTAMP
                     WHERE TableID = $5 AND StoreID = $6
                     RETURNING *
                 `, [name, area, capacity, status, id, storeId]);
+                if (!updateRes.rows[0]) return res.status(404).json({ error: 'Không tìm thấy bàn!' });
                 return res.json({ success: true, message: 'Đã cập nhật bàn thành công', data: updateRes.rows[0] });
-            } else {
-                // Insert
-                const insertRes = await db.query(`
-                    INSERT INTO Tables (StoreID, TableName, AreaName, Capacity, Status, QRToken)
-                    VALUES ($1, $2, $3, $4, $5, $6)
-                    RETURNING *
-                `, [storeId, name, area, capacity, status, `QR-${storeId}-${Date.now().toString().slice(-4)}`]);
-                return res.json({ success: true, message: 'Đã thêm bàn mới thành công', data: insertRes.rows[0] });
             }
+            const insertRes = await db.query(`
+                INSERT INTO Tables (StoreID, TableName, AreaName, Capacity, Status, QRToken)
+                VALUES ($1, $2, $3, $4, $5, $6)
+                RETURNING *
+            `, [storeId, name, area, capacity, status, `QR-${storeId}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`]);
+            return res.json({ success: true, message: 'Đã thêm bàn mới thành công', data: insertRes.rows[0] });
         } catch (e) {
             return res.status(500).json({ error: e.message });
         }
     }
 
-    // Mock Fallback
     if (id) {
-        const table = mockTables.find(t => t.TableID === id);
-        if (table) {
-            table.TableName = name;
-            table.AreaName = area;
-            table.Capacity = capacity;
-            table.Status = status;
-        }
+        const table = mockTables.find(t => t.TableID === id && t.StoreID === storeId);
+        if (!table) return res.status(404).json({ error: 'Không tìm thấy bàn!' });
+        Object.assign(table, { TableName: name, AreaName: area, Capacity: capacity, Status: status });
     } else {
-        mockTables.push({
-            TableID: Date.now(),
-            StoreID: storeId,
-            TableName: name,
-            AreaName: area,
-            Capacity: capacity,
-            Status: status
-        });
+        mockTables.push({ TableID: Date.now(), StoreID: storeId, TableName: name, AreaName: area, Capacity: capacity, Status: status });
     }
     res.json({ success: true, message: 'Đã lưu bàn (Mock Data)', data: { name, area, capacity, status } });
 });
 
-app.delete('/api/tables/:id', async (req, res) => {
+app.delete('/api/tables/:id', requireAuth(...MANAGER_ROLES), async (req, res) => {
     const tableId = parseInt(req.params.id, 10);
     if (db.isConfigured()) {
         try {
-            await db.query('DELETE FROM Tables WHERE TableID = $1', [tableId]);
+            await db.query('DELETE FROM Tables WHERE TableID = $1 AND StoreID = $2', [tableId, req.storeId]);
             return res.json({ success: true, message: 'Đã xóa bàn thành công khỏi Neon DB' });
         } catch (e) {
             return res.status(500).json({ error: e.message });
         }
     }
-    mockTables = mockTables.filter(t => t.TableID !== tableId);
+    mockTables = mockTables.filter(t => !(t.TableID === tableId && t.StoreID === req.storeId));
     res.json({ success: true, message: 'Đã xóa bàn (Mock)' });
 });
 
-// 5. Thực đơn món (MenuItems)
-app.get('/api/menu', async (req, res) => {
-    const storeId = parseInt(req.query.store_id || 1, 10);
+// =============================================================================
+// MENU
+// =============================================================================
+app.get('/api/menu', requireAuth(...STORE_ROLES), async (req, res) => {
+    const storeId = req.storeId;
     if (db.isConfigured()) {
         try {
             const result = await db.query('SELECT * FROM MenuItems WHERE StoreID = $1 ORDER BY ItemID ASC', [storeId]);
@@ -361,9 +331,11 @@ app.get('/api/menu', async (req, res) => {
     res.json({ success: true, data: mockMenu.filter(m => m.StoreID === storeId), source: 'Mock Data' });
 });
 
-app.post('/api/menu', async (req, res) => {
-    const { id, storeId = 1, name, cat = 'Cà Phê', price = 30000, img = '☕', desc = '', sku, allowTopping = false, allowedToppings = [] } = req.body;
+app.post('/api/menu', requireAuth(...MANAGER_ROLES), async (req, res) => {
+    const { id, name, cat = 'Cà Phê', price = 30000, img = '☕', desc = '', sku, allowTopping = false, allowedToppings = [] } = req.body || {};
+    const storeId = req.storeId;
     if (!name) return res.status(400).json({ error: 'Tên món là bắt buộc!' });
+    if (!Number.isFinite(Number(price)) || Number(price) < 0) return res.status(400).json({ error: 'Giá món không hợp lệ!' });
 
     const finalSku = (sku || `SKU-${Date.now().toString().slice(-6)}`).toUpperCase().trim();
     const isClientTimestamp = id && Number(id) > 1000000000;
@@ -378,13 +350,10 @@ app.post('/api/menu', async (req, res) => {
                     WHERE ItemID = $9 AND StoreID = $10
                     RETURNING *
                 `, [name, cat, price, img, desc, allowTopping, JSON.stringify(allowedToppings), finalSku, dbItemId, storeId]);
-                
                 if (updateRes.rows.length > 0) {
                     return res.json({ success: true, message: 'Đã cập nhật món thành công trên Neon DB', data: updateRes.rows[0] });
                 }
             }
-
-            // Thêm mới hoặc Upsert theo SKU nếu đã tồn tại
             const insertRes = await db.query(`
                 INSERT INTO MenuItems (StoreID, ItemName, CategoryName, BasePrice, ImageUrl, Description, SKU, AllowsTopping, AvailableToppings)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -399,7 +368,6 @@ app.post('/api/menu', async (req, res) => {
                     UpdatedAt = CURRENT_TIMESTAMP
                 RETURNING *
             `, [storeId, name, cat, price, img, desc, finalSku, allowTopping, JSON.stringify(allowedToppings)]);
-
             return res.json({ success: true, message: 'Đã lưu món thành công vào Neon DB', data: insertRes.rows[0] });
         } catch (e) {
             console.error('Lỗi lưu MenuItems vào Neon:', e.message);
@@ -407,54 +375,52 @@ app.post('/api/menu', async (req, res) => {
         }
     }
 
-    // Mock Fallback
     if (dbItemId) {
-        const item = mockMenu.find(m => m.ItemID === dbItemId);
+        const item = mockMenu.find(m => m.ItemID === dbItemId && m.StoreID === storeId);
         if (item) {
-            item.ItemName = name;
-            item.CategoryName = cat;
-            item.BasePrice = price;
-            item.Img = img;
-            item.Description = desc;
-            item.AllowTopping = allowTopping;
-            item.AllowedToppings = allowedToppings;
+            Object.assign(item, { ItemName: name, CategoryName: cat, BasePrice: price, Img: img, Description: desc, AllowTopping: allowTopping, AllowedToppings: allowedToppings });
         }
     } else {
         mockMenu.push({
-            ItemID: Date.now(),
-            StoreID: storeId,
-            ItemName: name,
-            CategoryName: cat,
-            BasePrice: price,
-            Img: img,
-            Description: desc,
-            AllowTopping: allowTopping,
-            AllowedToppings: allowedToppings
+            ItemID: Date.now(), StoreID: storeId, ItemName: name, CategoryName: cat, BasePrice: price,
+            Img: img, Description: desc, AllowTopping: allowTopping, AllowedToppings: allowedToppings
         });
     }
     res.json({ success: true, message: 'Đã lưu món (Mock)' });
 });
 
-app.delete('/api/menu/:id', async (req, res) => {
+app.delete('/api/menu/:id', requireAuth(...MANAGER_ROLES), async (req, res) => {
     const itemId = parseInt(req.params.id, 10);
-    const storeId = parseInt(req.query.store_id || 1, 10);
-
     if (db.isConfigured()) {
         try {
-            await db.query('DELETE FROM MenuItems WHERE ItemID = $1 AND StoreID = $2', [itemId, storeId]);
+            await db.query('DELETE FROM MenuItems WHERE ItemID = $1 AND StoreID = $2', [itemId, req.storeId]);
             return res.json({ success: true, message: 'Đã xóa món khỏi Neon DB' });
         } catch (e) {
             return res.status(500).json({ error: e.message });
         }
     }
-
-    mockMenu = mockMenu.filter(m => m.ItemID !== itemId);
+    mockMenu = mockMenu.filter(m => !(m.ItemID === itemId && m.StoreID === req.storeId));
     res.json({ success: true, message: 'Đã xóa món (Mock)' });
 });
 
-// 6. Quản lý Nhân sự (StaffUsers)
-app.get('/api/staff', async (req, res) => {
-    const storeId = parseInt(req.query.store_id || 1, 10);
+// =============================================================================
+// STAFF (chỉ quản lý). Không bao giờ trả mật khẩu; PIN chỉ trả cho quản lý để cấp lại cho nhân viên.
+// =============================================================================
+function publicStaff(s) {
+    const { Password, PasswordHash, ...rest } = s;
+    return rest;
+}
+
+async function pinTakenByOther(pin, exceptUserId) {
+    if (db.isConfigured()) {
+        const r = await db.query('SELECT 1 FROM StaffUsers WHERE Pin = $1 AND UserID <> $2 LIMIT 1', [pin, exceptUserId || 0]);
+        return r.rows.length > 0;
+    }
+    return mockStaff.some(s => s.Pin === pin && s.UserID !== exceptUserId);
+}
+
+app.get('/api/staff', requireAuth(...MANAGER_ROLES), async (req, res) => {
+    const storeId = req.storeId;
     if (db.isConfigured()) {
         try {
             const result = await db.query(`
@@ -468,37 +434,50 @@ app.get('/api/staff', async (req, res) => {
             console.warn('Lỗi truy vấn Neon:', e.message);
         }
     }
-    res.json({ success: true, data: mockStaff.filter(s => s.StoreID === storeId), source: 'Mock Data' });
+    res.json({ success: true, data: mockStaff.filter(s => s.StoreID === storeId).map(publicStaff), source: 'Mock Data' });
 });
 
-app.post('/api/staff', async (req, res) => {
-    const { id, storeId = 1, username, password, fullName, name, role, phone, pin, isActive = true } = req.body;
+app.post('/api/staff', requireAuth(...MANAGER_ROLES), async (req, res) => {
+    const { id, username, password, fullName, name, phone, isActive = true } = req.body || {};
+    const storeId = req.storeId;
     const finalName = fullName || name;
-    const finalUser = (username || phone || ('nv_' + Date.now().toString().slice(-4))).toLowerCase().trim();
-    const finalPin = pin ? String(pin).trim() : '1234';
-    const finalPass = password || finalPin;
+    const finalUser = (username || phone || ('nv_' + Date.now().toString().slice(-4))).toString().toLowerCase().trim();
+    const finalPin = req.body.pin ? String(req.body.pin).trim() : '1234';
+    const rawRole = String(req.body.role || 'Waiter');
+    const role = STAFF_ROLE_ALIASES[rawRole.toLowerCase()] || rawRole;
 
     if (!finalName) return res.status(400).json({ error: 'Tên nhân viên là bắt buộc!' });
+    if (!ALL_STAFF_ROLES.includes(role)) return res.status(400).json({ error: 'Vai trò không hợp lệ!' });
+    if (!/^\d{4}$/.test(finalPin)) return res.status(400).json({ error: 'Mã PIN phải gồm đúng 4 chữ số!' });
 
     const isClientTimestamp = id && Number(id) > 1000000000;
     const dbUserId = (!id || isClientTimestamp) ? null : parseInt(id, 10);
+
+    try {
+        if (await pinTakenByOther(finalPin, dbUserId)) {
+            return res.status(409).json({ error: 'Mã PIN này đã được nhân viên khác sử dụng. Vui lòng chọn PIN khác!' });
+        }
+    } catch (e) {
+        return res.status(500).json({ error: e.message });
+    }
+
+    // Mật khẩu: nếu không nhập khi tạo mới thì mặc định = PIN (băm). Khi sửa chỉ đổi nếu có nhập.
+    const newPassHash = password ? auth.hashPassword(password) : null;
 
     if (db.isConfigured()) {
         try {
             if (dbUserId) {
                 const updateRes = await db.query(`
                     UPDATE StaffUsers 
-                    SET FullName = $1, Role = $2, Phone = $3, Pin = $4, Username = $5, IsActive = $6, UpdatedAt = CURRENT_TIMESTAMP
+                    SET FullName = $1, Role = $2, Phone = $3, Pin = $4, Username = $5, IsActive = $6,
+                        Password = COALESCE($9, Password), UpdatedAt = CURRENT_TIMESTAMP
                     WHERE UserID = $7 AND StoreID = $8
-                    RETURNING *
-                `, [finalName, role, phone, finalPin, finalUser, isActive, dbUserId, storeId]);
-
+                    RETURNING UserID, StoreID, Username, FullName, Role, Phone, Pin, IsActive
+                `, [finalName, role, phone, finalPin, finalUser, isActive, dbUserId, storeId, newPassHash]);
                 if (updateRes.rows.length > 0) {
                     return res.json({ success: true, message: 'Đã cập nhật nhân viên trên Neon DB', data: updateRes.rows[0] });
                 }
             }
-
-            // Thêm mới hoặc Upsert theo Username nếu đã tồn tại
             const insertRes = await db.query(`
                 INSERT INTO StaffUsers (StoreID, Username, Password, Pin, FullName, Role, Phone, IsActive)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -510,9 +489,8 @@ app.post('/api/staff', async (req, res) => {
                     Password = EXCLUDED.Password,
                     IsActive = EXCLUDED.IsActive,
                     UpdatedAt = CURRENT_TIMESTAMP
-                RETURNING *
-            `, [storeId, finalUser, finalPass, finalPin, finalName, role, phone, isActive]);
-
+                RETURNING UserID, StoreID, Username, FullName, Role, Phone, Pin, IsActive
+            `, [storeId, finalUser, newPassHash || auth.hashPassword(finalPin), finalPin, finalName, role, phone, isActive]);
             return res.json({ success: true, message: 'Đã lưu nhân viên thành công vào Neon DB', data: insertRes.rows[0] });
         } catch (e) {
             console.error('Lỗi lưu StaffUsers vào Neon:', e.message);
@@ -520,63 +498,45 @@ app.post('/api/staff', async (req, res) => {
         }
     }
 
-    // Mock fallback
     if (dbUserId) {
-        const staff = mockStaff.find(s => s.UserID === dbUserId);
+        const staff = mockStaff.find(s => s.UserID === dbUserId && s.StoreID === storeId);
         if (staff) {
-            staff.FullName = finalName;
-            staff.Role = role;
-            staff.Phone = phone;
-            staff.Pin = finalPin;
-            staff.Username = finalUser;
-            staff.IsActive = isActive;
+            Object.assign(staff, { FullName: finalName, Role: role, Phone: phone, Pin: finalPin, Username: finalUser, IsActive: isActive });
+            if (newPassHash) staff.Password = newPassHash;
         }
     } else {
-        const newStaff = {
-            UserID: Date.now(),
-            StoreID: storeId,
-            Username: finalUser,
-            Password: finalPass,
-            FullName: finalName,
-            Role: role,
-            Phone: phone,
-            Pin: finalPin,
-            IsActive: isActive
-        };
-        mockStaff.push(newStaff);
+        mockStaff.push({
+            UserID: Date.now(), StoreID: storeId, Username: finalUser, Password: newPassHash || auth.hashPassword(finalPin),
+            FullName: finalName, Role: role, Phone: phone, Pin: finalPin, IsActive: isActive
+        });
     }
-
     res.json({ success: true, message: 'Lưu nhân viên thành công' });
 });
 
-app.delete('/api/staff/:id', async (req, res) => {
+app.delete('/api/staff/:id', requireAuth(...MANAGER_ROLES), async (req, res) => {
     const id = parseInt(req.params.id, 10);
-    const storeId = parseInt(req.query.store_id || 1, 10);
+    if (id === req.auth.uid) return res.status(400).json({ error: 'Không thể tự xóa tài khoản đang đăng nhập!' });
 
     if (db.isConfigured()) {
         try {
-            await db.query('DELETE FROM StaffUsers WHERE UserID = $1 AND StoreID = $2', [id, storeId]);
+            await db.query('DELETE FROM StaffUsers WHERE UserID = $1 AND StoreID = $2', [id, req.storeId]);
             return res.json({ success: true, message: 'Đã xóa nhân viên' });
         } catch (e) {
             return res.status(500).json({ error: e.message });
         }
     }
-
-    mockStaff = mockStaff.filter(s => s.UserID !== id);
+    mockStaff = mockStaff.filter(s => !(s.UserID === id && s.StoreID === req.storeId));
     res.json({ success: true, message: 'Đã xóa nhân viên' });
 });
 
-// 7. Quản lý Hóa đơn & Đối soát (Orders)
-app.get('/api/orders', async (req, res) => {
-    const storeId = parseInt(req.query.store_id || 1, 10);
+// =============================================================================
+// ORDERS
+// =============================================================================
+app.get('/api/orders', requireAuth(...MANAGER_ROLES, 'Cashier'), async (req, res) => {
+    const storeId = req.storeId;
     if (db.isConfigured()) {
         try {
-            const result = await db.query(`
-                SELECT * FROM Orders 
-                WHERE StoreID = $1 
-                ORDER BY OrderID DESC 
-                LIMIT 50
-            `, [storeId]);
+            const result = await db.query('SELECT * FROM Orders WHERE StoreID = $1 ORDER BY OrderID DESC LIMIT 50', [storeId]);
             return res.json({ success: true, data: result.rows, source: 'Neon DB' });
         } catch (e) {
             console.warn('Lỗi truy vấn Neon:', e.message);
@@ -585,53 +545,48 @@ app.get('/api/orders', async (req, res) => {
     res.json({ success: true, data: mockOrders.filter(o => o.StoreID === storeId), source: 'Mock Data' });
 });
 
-app.post('/api/orders/void', async (req, res) => {
-    const { code, reason, pin, managerName } = req.body;
-    
-    // BẢO MẬT: Kiểm tra mã PIN Quản lý
-    const isValidPin = pin === '8888' || pin === '1234';
-    if (!isValidPin) {
-        return res.status(403).json({ error: '⛔ TỪ CHỐI TRUY CẬP: Nhân viên không có quyền xóa/hủy hóa đơn! Chỉ Quản lý có PIN hợp lệ mới được thực hiện.' });
-    }
+// Hủy hóa đơn: chỉ quản lý (kiểm tra vai trò từ token, không dùng PIN cố định)
+app.post('/api/orders/void', requireAuth(...MANAGER_ROLES), async (req, res) => {
+    const { code, reason } = req.body || {};
+    if (!code) return res.status(400).json({ error: 'Thiếu mã hóa đơn!' });
+    const managerName = req.auth.name || req.auth.username;
 
     if (db.isConfigured()) {
         try {
             const updateRes = await db.query(`
                 UPDATE Orders 
                 SET OrderStatus = 'Cancelled', CancelReason = $1, CancelledBy = $2, UpdatedAt = CURRENT_TIMESTAMP
-                WHERE OrderCode = $3
+                WHERE OrderCode = $3 AND StoreID = $4
                 RETURNING *
-            `, [reason || 'Quản lý duyệt hủy', managerName || 'Quản lý cửa hàng', code]);
+            `, [reason || 'Quản lý duyệt hủy', managerName, code, req.storeId]);
+            if (!updateRes.rows[0]) return res.status(404).json({ error: 'Không tìm thấy hóa đơn!' });
             return res.json({ success: true, message: `Đã hủy hóa đơn ${code}`, data: updateRes.rows[0] });
         } catch (e) {
             return res.status(500).json({ error: e.message });
         }
     }
-
-    res.json({ success: true, message: `✓ Đã hủy hóa đơn ${code} theo ủy quyền của ${managerName || 'Quản lý'}` });
+    res.json({ success: true, message: `✓ Đã hủy hóa đơn ${code} theo ủy quyền của ${managerName}` });
 });
 
-// 8. Hàng đợi Pha Chế Barista KDS
-app.get('/api/barista/queue', async (req, res) => {
-    res.json({ success: true, data: mockBaristaQueue });
+// =============================================================================
+// BARISTA KDS (hàng đợi lưu trong bộ nhớ, tách theo quán)
+// =============================================================================
+app.get('/api/barista/queue', requireAuth('Barista', ...MANAGER_ROLES, 'Cashier', 'Waiter'), (req, res) => {
+    res.json({ success: true, data: mockBaristaQueue.filter(t => t.StoreID === req.storeId) });
 });
 
-app.post('/api/barista/queue', (req, res) => {
-    const ticket = req.body;
-    mockBaristaQueue.push(ticket);
+app.post('/api/barista/queue', requireAuth('Cashier', 'Waiter', ...MANAGER_ROLES), (req, res) => {
+    mockBaristaQueue.push({ ...(req.body || {}), StoreID: req.storeId });
     res.json({ success: true, message: 'Đã bắn vé sang hàng đợi Barista' });
 });
 
-// Xử lý lỗi chung: trả JSON thay vì HTML stack trace (vd: body JSON sai cú pháp)
+// Xử lý lỗi chung: trả JSON thay vì HTML stack trace
 app.use((err, req, res, next) => {
     const status = err.status || err.statusCode || 500;
     res.status(status).json({ success: false, error: status === 400 ? 'Dữ liệu gửi lên không hợp lệ (JSON sai cú pháp)!' : 'Lỗi máy chủ nội bộ' });
 });
 
-// =============================================================================
-// KHỞI ĐỘNG LOCAL SERVER NẾU KHÔNG CHẠY TRÊN VERCEL SERVERLESS
-// =============================================================================
-if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+if (require.main === module && process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
     const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => {
         console.log(`🚀 CafeManager POS Backend đang chạy tại: http://localhost:${PORT}`);

@@ -191,8 +191,8 @@ def run_tests():
         api_user_match = re.search(rf"Username:\s*'{u['username']}'.*?Password:\s*'{re.escape(u['password'])}'", api_content)
         assert_test(api_user_match is not None, f"Backend API có tài khoản [{u['username']}] và mật khẩu chuẩn [{u['password']}]")
 
-    assert_test("password !== user.Password" in api_content, "Backend API kiểm tra sai mật khẩu sẽ trả về HTTP 401")
-    assert_test("cleanPin && s.IsActive !== false" in api_content, "Backend API kiểm tra mã PIN chặt chẽ")
+    assert_test("auth.verifyPassword(password, user.Password)" in api_content, "Backend API kiểm tra sai mật khẩu sẽ trả về HTTP 401")
+    assert_test("s.Pin === pin && s.IsActive !== false" in api_content, "Backend API kiểm tra mã PIN chặt chẽ")
 
     # ------------------------------------------------------------------
     # TEST 6: Mô phỏng logic kiểm tra quyền (RBAC Logic Simulation)
